@@ -1,0 +1,85 @@
+---
+title: "MPC"
+author: "NCompton"
+date: "28/06/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+#install.packages("odbc")
+#install.packages("DBI")
+library(odbc)
+#sort(unique(odbcListDrivers()[[1]]))
+con <- DBI::dbConnect(odbc::odbc(), 
+                      Driver = "SQL Server", 
+                      Server = "IT049561\\SQLEXPRESS", 
+                      Database = "MPC", 
+                      Trusted_Connection = "True")
+```
+
+Comparative t-test for the beam center shift reported by the MPC and the one calculated in my algorithm
+```{sql connection=con, output.var = "centredf6x"}
+SELECT "MPC_Distance", "Calibrated_Distance", "Beam_Energy"
+FROM "Linked MPC Data"
+WHERE "Beam_Energy" = '6x'
+
+```
+
+```{r}
+# remove duplicates
+#install.packages("dplyr")
+library(dplyr)
+centredf6x <- distinct(centredf6x)
+t.test(centredf6x["MPC_Distance"], centredf6x["Calibrated_Distance"])
+```
+
+T-Test output:
+df = degrees of freedom, the number of datapoints (more is better)
+95% CI is the range of values the true difference will be in 95% of the time
+p = prob that t occurred by chance
+````{sql connection=con, output.var = "centredf10x"}
+SELECT "MPC_Distance", "Calibrated_Distance", "Beam_Energy"
+FROM "Linked MPC Data"
+WHERE "Beam_Energy" = '10x'
+
+```
+```{r}
+centredf10x <- distinct(centredf10x)
+t.test(centredf10x["MPC_Distance"], centredf10x["Calibrated_Distance"])
+```
+````{sql connection=con, output.var = "centredf10fff"}
+SELECT "MPC_Distance", "Calibrated_Distance", "Beam_Energy"
+FROM "Linked MPC Data"
+WHERE "Beam_Energy" = '10fff'
+
+```
+```{r}
+centredf10fff <- distinct(centredf10fff)
+t.test(centredf10fff["MPC_Distance"], centredf10fff["Calibrated_Distance"])
+```
+
+```
+
