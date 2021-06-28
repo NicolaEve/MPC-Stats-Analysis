@@ -179,3 +179,28 @@ WHERE "Beam_Energy" = '10fff'AND "Inline" = 0
 t.test(Symmetry ~ Transformed, data = symm10fffcross)
 
 ```
+```{r}
+# looking the distribution of the beam centre shift for 6x
+#install.packages("fitdistrplus")
+library(fitdistrplus)
+descdist(centredf6x$MPC_Distance, discrete = FALSE)
+hist(centredf6x$MPC_Distance)
+normal_dist <- fitdist(centredf6x$MPC_Distance, "norm")
+plot(normal_dist)
+
+descdist(centredf6x$Calibrated_Distance, discrete = FALSE)
+hist(centredf6x$Calibrated_Distance)
+normal_dist <- fitdist(centredf6x$Calibrated_Distance, "norm")
+plot(normal_dist)
+```
+```{r}
+#install.packages("qicharts2")
+library(qicharts2)
+qic(centredf10x$MPC_Distance, chart = 'i')
+qic(centredf10x$Calibrated_Distance, chart = 'i')
+qic(centredf10x$MPC_Distance, chart = 'mr')
+qic(centredf10x$Calibrated_Distance, chart = 'mr')
+
+qic(output6x$Output_Change, x = output6x$QA_Date, chart = 'xbar')
+```
+
