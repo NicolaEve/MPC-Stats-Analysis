@@ -80,6 +80,39 @@ WHERE "Beam_Energy" = '10fff'
 centredf10fff <- distinct(centredf10fff)
 t.test(centredf10fff["MPC_Distance"], centredf10fff["Calibrated_Distance"])
 ```
+Regression on the beam output change against time
+should it be linear?
+````{sql connection=con, output.var = "output6x"}
+SELECT "Output_Change", "Beam_Energy", "QA_Date"
+FROM "Linked MPC Data"
+WHERE "Beam_Energy" = '6x'
+
+```
+```{r}
+output6x <- distinct(output6x)
+lm <- lm(Output_Change ~ QA_Date, data = output6x)
+```
+
+
+```{r}
+summary(lm)
+install.packages("ggplot2")
+library(ggplot2)
+ggplot(output6x, aes(QA_Date, Output_Change)) +
+  geom_point() +
+  xlab("QA_Date") +
+  ylab("Output_Change") +
+  ggtitle("Output Changes against Time")
+```
+```{sql connection=con, output.var = "symm6x"}
+SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
+FROM "Linked MPC Data"
+WHERE "Beam_Energy" = '6x'AND "Inline" = 1
+
+```
+compare the symmetry values once the calibration has been applied to before, for 6x inline
+```{r}
+t.test(Symmetry ~ Transformed, data = symm6x)
 
 ```
 
