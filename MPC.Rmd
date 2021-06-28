@@ -78,7 +78,9 @@ WHERE "Beam_Energy" = '10fff'
 ```
 ```{r}
 centredf10fff <- distinct(centredf10fff)
-t.test(centredf10fff["MPC_Distance"], centredf10fff["Calibrated_Distance"])
+t.test(centredf10fff$MPC_Distance, centredf10fff$Calibrated_Distance, paired=TRUE)
+
+boxplot(centredf10fff$MPC_Distance, centredf10fff$Calibrated_Distance)
 ```
 Regression on the beam output change against time
 should it be linear?
@@ -191,6 +193,11 @@ plot(normal_dist)
 descdist(centredf6x$Calibrated_Distance, discrete = FALSE)
 hist(centredf6x$Calibrated_Distance)
 normal_dist <- fitdist(centredf6x$Calibrated_Distance, "norm")
+plot(normal_dist)
+
+descdist(output6x$Output_Change, discrete = FALSE)
+hist(output6x$Output_Change)
+normal_dist <- fitdist(output6x$Output_Change, "norm")
 plot(normal_dist)
 ```
 ```{r}
