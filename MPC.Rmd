@@ -91,18 +91,19 @@ WHERE "Beam_Energy" = '6x'
 ```{r}
 output6x <- distinct(output6x)
 lm <- lm(Output_Change ~ QA_Date, data = output6x)
+summary(lm)
 ```
 
 
 ```{r}
-summary(lm)
-install.packages("ggplot2")
+#install.packages("ggplot2")
 library(ggplot2)
 ggplot(output6x, aes(QA_Date, Output_Change)) +
   geom_point() +
   xlab("QA_Date") +
   ylab("Output_Change") +
   ggtitle("Output Changes against Time")
+
 ```
 ```{sql connection=con, output.var = "symm6x"}
 SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
@@ -115,4 +116,66 @@ compare the symmetry values once the calibration has been applied to before, for
 t.test(Symmetry ~ Transformed, data = symm6x)
 
 ```
+Repeat for crossline
+```{sql connection=con, output.var = "symm6xcross"}
+SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
+FROM "Linked MPC Data"
+WHERE "Beam_Energy" = '6x'AND "Inline" = 0
 
+```
+compare the symmetry values once the calibration has been applied to before, for 6x crossline
+```{r}
+t.test(Symmetry ~ Transformed, data = symm6xcross)
+
+```
+10x inline symmetry
+```{sql connection=con, output.var = "symm10xin"}
+SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
+FROM "Linked MPC Data"
+WHERE "Beam_Energy" = '10x'AND "Inline" = 1
+
+```
+
+```{r}
+t.test(Symmetry ~ Transformed, data = symm10xin)
+
+```
+Repeat for crossline
+```{sql connection=con, output.var = "symm10xcross"}
+SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
+FROM "Linked MPC Data"
+WHERE "Beam_Energy" = '10x'AND "Inline" = 0
+
+```
+
+```{r}
+t.test(Symmetry ~ Transformed, data = symm10xcross)
+
+```
+
+10FFF
+
+```{sql connection=con, output.var = "symm10fffin"}
+SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
+FROM "Linked MPC Data"
+WHERE "Beam_Energy" = '10fff'AND "Inline" = 1
+
+```
+
+```{r}
+t.test(Symmetry ~ Transformed, data = symm10fffin)
+
+```
+
+Repeat for crossline
+```{sql connection=con, output.var = "symm10fffcross"}
+SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
+FROM "Linked MPC Data"
+WHERE "Beam_Energy" = '10fff'AND "Inline" = 0
+
+```
+
+```{r}
+t.test(Symmetry ~ Transformed, data = symm10fffcross)
+
+```
