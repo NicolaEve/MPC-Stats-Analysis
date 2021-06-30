@@ -151,6 +151,8 @@ OutputChange = 2
 Uniformity = 2
 Create a conditional column for if it passed/failed on my algorithm and on mpc
 will this give sensitivity and specificity ?
+there's no mpc that fail and loads of calibrated that do
+should there be a cut off?
 ```{r}
 mpc_6x$mpc_distance_pass <- "fail"
 mpc_6x$mpc_distance_pass[mpc_6x$MPC_Distance<0.5 & mpc_6x$MPC_Distance> -0.5] <- "pass"
