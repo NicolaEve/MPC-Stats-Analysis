@@ -144,9 +144,20 @@ t.test(mpc_6x$MPC_Distance, mpc_6x$Calibrated_Distance)
 t.test(mpc_10x$MPC_Distance, mpc_10x$Calibrated_Distance)
 t.test(mpc_10fff$MPC_Distance, mpc_10fff$Calibrated_Distance)
 ```
+chi-square test for categorical data? 
+Thresholds for passing the MPC tests are
+centre shift = 0.5
+OutputChange = 2
+Uniformity = 2
+Create a conditional column for if it passed/failed on my algorithm and on mpc
+will this give sensitivity and specificity ?
+```{r}
+mpc_6x$mpc_distance_pass <- "fail"
+mpc_6x$mpc_distance_pass[mpc_6x$MPC_Distance<0.5 & mpc_6x$MPC_Distance> -0.5] <- "pass"
+```
 
-Compare the symmetry and flatness before and af
 
+Compare the symmetry and flatness before and after transformation applied
 
 Regression on the beam output change against time
 should it be linear?
@@ -169,7 +180,6 @@ ggplot(mpc_6x, aes(QA_Date, OutputChange)) +
 SELECT "Symmetry", "Flatness", "Beam_Energy", "Inline", "Transformed"
 FROM "Linked MPC Data"
 WHERE "Beam_Energy" = '6x'AND "Inline" = 1
-
 ```
 compare the symmetry values once the calibration has been applied to before, for 6x inline
 ```{r}
@@ -196,12 +206,10 @@ t.test(Symmetry ~ Transformed, data = symm6xcross)
 SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
 FROM "Linked MPC Data"
 WHERE "Beam_Energy" = '10x'AND "Inline" = 1
-
 ```
 
 ```{r}
 t.test(Symmetry ~ Transformed, data = symm10xin)
-
 ```
 Repeat for crossline
 ```{sql connection=con, output.var = "symm10xcross"}
