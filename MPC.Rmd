@@ -5,33 +5,63 @@ date: "28/06/2021"
 output: html_document
 ---
 
+knit at end
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-```{r}
+install packages and set libraries
+```{r, echo = FALSE}
 #install.packages("odbc")
 #install.packages("DBI")
+#install.packages("dplyr")
+#install.packages("fitdistrplus")
+#install.packages("ggplot2")
+#install.packages("qicharts2")
+#install.packages("psych")
+#install.packages("distributions3")
+library(psych)
+library(qicharts2)
+library(ggplot2)
+library(fitdistrplus)
+library(dplyr)
 library(odbc)
+library(distributions3)
+```
+
+Define functions
+```{r}
+# function to check the distribution of the data input
+check_distribution <- function(data){
+  descdist(data, discrete = FALSE)
+  normal_dist <- fitdist(data, "norm")
+  plot(normal_dist)
+}
+
+# function to return 2-sample z statistic and p value
+z.test <- function(x, y){
+  # get the sample mean, sd and n
+  mu_1 = mean(x)
+  mu_2 = mean(y)
+  sigma_1 = sd(x)^2
+  sigma_2 = sd(y)^2
+  n_1 = length(x)
+  n_2 = length(y)
+  
+  # calculate 2 tailed z stat
+  z_stat = (mu_1 - mu_2) / (sqrt ((sigma_1/n_1) + (sigma_2/n_2)))
+  
+  # calculate p value
+  Z <- Normal(0,1) # make a standard normal r.v
+  p = 2 * cdf(Z, abs(z_stat))
+  return(c(z_stat, p))
+}
+```
+
+
+Set up the database connection
+```{r}
 #sort(unique(odbcListDrivers()[[1]]))
 con <- DBI::dbConnect(odbc::odbc(), 
                       Driver = "SQL Server", 
@@ -40,83 +70,114 @@ con <- DBI::dbConnect(odbc::odbc(),
                       Trusted_Connection = "True")
 ```
 
-Comparative t-test for the beam center shift reported by the MPC and the one calculated in my algorithm
-```{sql connection=con, output.var = "centredf6x"}
-SELECT "MPC_Distance", "Calibrated_Distance", "Beam_Energy"
-FROM "Linked MPC Data"
-WHERE "Beam_Energy" = '6x'
+Get the MPC view as a dataframe
+```{sql connection=con, output.var = "mpc_view"}
+SELECT *
+FROM MPC_View
 
 ```
 
+Get a dataframe for each beam energy
+```{sql connection=con, output.var = "mpc_6x"}
+SELECT *
+FROM MPC_View
+WHERE Beam_Energy = '6x'
+```
+```{sql connection=con, output.var = "mpc_10x"}
+SELECT *
+FROM MPC_View
+WHERE Beam_Energy = '10x'
+
+```
+```{sql connection=con, output.var = "mpc_10fff"}
+SELECT *
+FROM MPC_View
+WHERE Beam_Energy = '10fff'
+
+```
+
+
+Descriptive statistics with psych
+```{r, echo = FALSE}
+centre_shift_mpc <- describeBy(mpc_view$MPC_Distance, mpc_view$Beam_Energy)
+centre_shift_mpc
+
+centre_shift_calibrated <- describeBy(mpc_view$Calibrated_Distance, mpc_view$Beam_Energy)
+centre_shift_calibrated
+
+uniformity_mpc <- describeBy(mpc_view$Uniformity, mpc_view$Beam_Energy)
+uniformity_mpc
+
+output_change_mpc <- describeBy(mpc_view$OutputChange, mpc_view$Beam_Energy)
+output_change_mpc
+```
+
+
+Z-test and t-test to compare the beam center shift reported by the MPC and the one calculated in my algorithm
+
+check distributions are normal
 ```{r}
-# remove duplicates
-#install.packages("dplyr")
-library(dplyr)
-centredf6x <- distinct(centredf6x)
-t.test(centredf6x["MPC_Distance"], centredf6x["Calibrated_Distance"])
+check_distribution(mpc_6x$MPC_Distance)
+check_distribution(mpc_6x$Calibrated_Distance)
+check_distribution(mpc_10x$MPC_Distance)
+check_distribution(mpc_10x$Calibrated_Distance)
+check_distribution(mpc_10fff$MPC_Distance)
+check_distribution(mpc_10fff$Calibrated_Distance)
 ```
 
-T-Test output:
-df = degrees of freedom, the number of datapoints (more is better)
-95% CI is the range of values the true difference will be in 95% of the time
-p = prob that t occurred by chance
-````{sql connection=con, output.var = "centredf10x"}
-SELECT "MPC_Distance", "Calibrated_Distance", "Beam_Energy"
-FROM "Linked MPC Data"
-WHERE "Beam_Energy" = '10x'
-
-```
+Boxplots comparing centre shift reported by MPC and calculated by my algorithm
 ```{r}
-centredf10x <- distinct(centredf10x)
-t.test(centredf10x["MPC_Distance"], centredf10x["Calibrated_Distance"])
+# visualise difference in distributions in a boxplot
+boxplot(mpc_6x$MPC_Distance, mpc_6x$Calibrated_Distance)
+boxplot(mpc_10x$MPC_Distance, mpc_10x$Calibrated_Distance)
+boxplot(mpc_10fff$MPC_Distance, mpc_10fff$Calibrated_Distance)
 ```
-````{sql connection=con, output.var = "centredf10fff"}
-SELECT "MPC_Distance", "Calibrated_Distance", "Beam_Energy"
-FROM "Linked MPC Data"
-WHERE "Beam_Energy" = '10fff'
 
-```
+center shift z and t tests
+(T-test is not meant to used on samples bigger than 30 but z and t are giving basicallly the same result; just with different p values)
 ```{r}
-centredf10fff <- distinct(centredf10fff)
-t.test(centredf10fff$MPC_Distance, centredf10fff$Calibrated_Distance, paired=TRUE)
+z.test(mpc_6x$MPC_Distance, mpc_6x$Calibrated_Distance)
+z.test(mpc_10x$MPC_Distance, mpc_10x$Calibrated_Distance)
+z.test(mpc_10fff$MPC_Distance, mpc_10fff$Calibrated_Distance)
 
-boxplot(centredf10fff$MPC_Distance, centredf10fff$Calibrated_Distance)
+t.test(mpc_6x$MPC_Distance, mpc_6x$Calibrated_Distance)
+t.test(mpc_10x$MPC_Distance, mpc_10x$Calibrated_Distance)
+t.test(mpc_10fff$MPC_Distance, mpc_10fff$Calibrated_Distance)
 ```
+
+Compare the symmetry and flatness before and af
+
+
 Regression on the beam output change against time
 should it be linear?
-````{sql connection=con, output.var = "output6x"}
-SELECT "Output_Change", "Beam_Energy", "QA_Date"
-FROM "Linked MPC Data"
-WHERE "Beam_Energy" = '6x'
 
-```
 ```{r}
-output6x <- distinct(output6x)
-lm <- lm(Output_Change ~ QA_Date, data = output6x)
+lm <- lm(OutputChange ~ QA_Date, data = mpc_6x)
 summary(lm)
 ```
 
-
+plot the beam output change over time
 ```{r}
-#install.packages("ggplot2")
-library(ggplot2)
-ggplot(output6x, aes(QA_Date, Output_Change)) +
+ggplot(mpc_6x, aes(QA_Date, OutputChange)) +
   geom_point() +
-  xlab("QA_Date") +
-  ylab("Output_Change") +
+  xlab("QA Date") +
+  ylab("Output Change") +
   ggtitle("Output Changes against Time")
 
 ```
 ```{sql connection=con, output.var = "symm6x"}
-SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
+SELECT "Symmetry", "Flatness", "Beam_Energy", "Inline", "Transformed"
 FROM "Linked MPC Data"
 WHERE "Beam_Energy" = '6x'AND "Inline" = 1
 
 ```
 compare the symmetry values once the calibration has been applied to before, for 6x inline
 ```{r}
+check_distribution(symm6x$Flatness)
+check_distribution(symm6x$Symmetry)
 t.test(Symmetry ~ Transformed, data = symm6x)
-
+t.test(Flatness ~ Transformed, data = symm6x)
+z.test(symm6x$Symmetry$Transformed$TRUE, symm6x$Symmetry$Transformed$FALSE)
 ```
 Repeat for crossline
 ```{sql connection=con, output.var = "symm6xcross"}
@@ -181,33 +242,14 @@ WHERE "Beam_Energy" = '10fff'AND "Inline" = 0
 t.test(Symmetry ~ Transformed, data = symm10fffcross)
 
 ```
+
 ```{r}
-# looking the distribution of the beam centre shift for 6x
-#install.packages("fitdistrplus")
-library(fitdistrplus)
-descdist(centredf6x$MPC_Distance, discrete = FALSE)
-hist(centredf6x$MPC_Distance)
-normal_dist <- fitdist(centredf6x$MPC_Distance, "norm")
-plot(normal_dist)
 
-descdist(centredf6x$Calibrated_Distance, discrete = FALSE)
-hist(centredf6x$Calibrated_Distance)
-normal_dist <- fitdist(centredf6x$Calibrated_Distance, "norm")
-plot(normal_dist)
+qic(mpc_10x$MPC_Distance, chart = 'i')
+qic(mpc_10x$Calibrated_Distance, chart = 'i')
+qic(mpc_10x$MPC_Distance, chart = 'mr')
+qic(mpc_10x$Calibrated_Distance, chart = 'mr')
 
-descdist(output6x$Output_Change, discrete = FALSE)
-hist(output6x$Output_Change)
-normal_dist <- fitdist(output6x$Output_Change, "norm")
-plot(normal_dist)
-```
-```{r}
-#install.packages("qicharts2")
-library(qicharts2)
-qic(centredf10x$MPC_Distance, chart = 'i')
-qic(centredf10x$Calibrated_Distance, chart = 'i')
-qic(centredf10x$MPC_Distance, chart = 'mr')
-qic(centredf10x$Calibrated_Distance, chart = 'mr')
-
-qic(output6x$Output_Change, x = output6x$QA_Date, chart = 'xbar')
+qic(mpc_6x$OutputChange, x = mpc_6x$QA_Date, chart = 'xbar')
 ```
 
