@@ -144,6 +144,22 @@ t.test(mpc_6x$MPC_Distance, mpc_6x$Calibrated_Distance)
 t.test(mpc_10x$MPC_Distance, mpc_10x$Calibrated_Distance)
 t.test(mpc_10fff$MPC_Distance, mpc_10fff$Calibrated_Distance)
 ```
+
+Comparing the symmetry and flatness before and after transformed applied 
+```{r}
+z.test(mpc_6x$Symmetry[mpc_6x$Transformed=0], mpc_6x$Symmetry[mpc_6x$Transformed=1])
+z.test(mpc_6x$Flatness[mpc_6x$Transformed=0], mpc_6x$Flatness[mpc_6x$Transformed=1])
+```
+
+Comparing the symmetry and flatness in both directions - crossline and inline
+once calibration as been applied
+```{r}
+z.test(mpc_6x$Symmetry[mpc_6x$Transformed=1 & mpc_6x$Inline=0], mpc_6x$Symmetry[mpc_6x$Transformed=1 & mpc_6x$Inline=1])
+
+z.test(mpc_6x$Flatness[mpc_6x$Transformed=1 & mpc_6x$Inline=0], mpc_6x$Flatness[mpc_6x$Transformed=1 & mpc_6x$Inline=1])
+```
+
+
 chi-square test for categorical data? 
 Thresholds for passing the MPC tests are
 centre shift = 0.5
