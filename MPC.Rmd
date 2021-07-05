@@ -31,6 +31,7 @@ library(distributions3)
 ```
 
 Define functions
+is the z test paired? 
 ```{r}
 # function to check the distribution of the data input
 check_distribution <- function(data){
@@ -167,6 +168,7 @@ OutputChange = 2
 Uniformity = 2
 Create a conditional column for if it passed/failed on my algorithm and on mpc
 will this give sensitivity and specificity ?
+or it will give another metric for comparitive stats
 there's no mpc that fail and loads of calibrated that do
 should there be a cut off?
 ```{r}
@@ -175,7 +177,6 @@ mpc_6x$mpc_distance_pass[mpc_6x$MPC_Distance<0.5 & mpc_6x$MPC_Distance> -0.5] <-
 ```
 
 
-Compare the symmetry and flatness before and after transformation applied
 
 Regression on the beam output change against time
 should it be linear?
@@ -207,6 +208,14 @@ t.test(Symmetry ~ Transformed, data = symm6x)
 t.test(Flatness ~ Transformed, data = symm6x)
 z.test(symm6x$Symmetry$Transformed$TRUE, symm6x$Symmetry$Transformed$FALSE)
 ```
+
+for skewed distriubtions - determining if paired data has the same distibution
+Wilcox signed rank test
+```{r}
+wilcox.test(mpc_6x$MPC_Distance, mpc_6x$Calibrated_Distance)
+```
+
+
 Repeat for crossline
 ```{sql connection=con, output.var = "symm6xcross"}
 SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
@@ -268,7 +277,8 @@ WHERE "Beam_Energy" = '10fff'AND "Inline" = 0
 t.test(Symmetry ~ Transformed, data = symm10fffcross)
 
 ```
-
+SPC charts for the beam centre shift over time;
+the flatness and symmetry over time
 ```{r}
 
 qic(mpc_10x$MPC_Distance, chart = 'i')
@@ -277,6 +287,8 @@ qic(mpc_10x$MPC_Distance, chart = 'mr')
 qic(mpc_10x$Calibrated_Distance, chart = 'mr')
 
 qic(mpc_6x$OutputChange, x = mpc_6x$QA_Date, chart = 'xbar')
+
+qic(mpc_6x$Symmetry[mpc_6x$Transformed=1 & mpc_6x$Inline = 0], chart = 'mr')
 ```
 
 get the results since the date the water phantom was measured i.e. since calibration
