@@ -263,3 +263,11 @@ qic(mpc_10x$Calibrated_Distance, chart = 'mr')
 qic(mpc_6x$OutputChange, x = mpc_6x$QA_Date, chart = 'xbar')
 ```
 
+get the results since the date the water phantom was measured i.e. since calibration
+```{sql connection=con, output.var = "recent_mpc"}
+SELECT * 
+FROM "Linked MPC Data"
+WHERE "QA_Date" > "31-03-2021"" 
+
+```
+
