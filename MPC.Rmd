@@ -310,6 +310,72 @@ print(sens)
 spec <- true_neg / (true_neg + false_pos)
 print(spec)
 ```
+```{r}
+df6x$flat_test <- "fail"
+df6x$flat_test[df6x$FlatInAT<104 & df6x$FlatCrossAT<104] <- "pass"
+
+recent6x$flat_test <- "fail"
+recent6x$flat_test[recent6x$FlatInAT<104 & recent6x$FlatCrossAT<104] <- "pass"
+
+false_pos <- sum(recent6x$uniformity_test == "pass" & recent6x$flat_test == "fail")
+true_pos <- sum(recent6x$uniformity_test == "pass" & recent6x$flat_test == "pass")
+false_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$flat_test == "pass")
+true_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$flat_test == "fail")
+
+sens <- true_pos / (true_pos + false_neg)
+print(sens)
+
+spec <- true_neg / (true_neg + false_pos)
+print(spec)
+
+false_pos <- sum(df6x$uniformity_test == "pass" & df6x$flat_test == "fail")
+true_pos <- sum(df6x$uniformity_test == "pass" & df6x$flat_test == "pass")
+false_neg <- sum(df6x$uniformity_test == "fail" & df6x$flat_test == "pass")
+true_neg <- sum(df6x$uniformity_test == "fail" & df6x$flat_test == "fail")
+
+sens <- true_pos / (true_pos + false_neg)
+print(sens)
+
+spec <- true_neg / (true_neg + false_pos)
+print(spec)
+```
+sens/spec of beam centre shift
+the MPC distance is always within 0.5mm threshold
+```{r}
+df6x$centre_mpc_test <- "fail"
+df6x$centre_mpc_test[df6x$MPC_Distance<0.5 & df6x$MPC_Distance>-0.5] <- "pass"
+
+df6x$centre_cal_test <- "fail"
+df6x$centre_cal_test[df6x$Calibrated_Distance<0.5 & df6x$Calibrated_Distance>-0.5] <- "pass"
+
+recent6x$centre_mpc_test <- "fail"
+recent6x$centre_mpc_test[recent6x$MPC_Distance<0.5 & recent6x$MPC_Distance>-0.5] <- "pass"
+
+recent6x$centre_cal_test <- "fail"
+recent6x$centre_cal_test[recent6x$Calibrated_Distance<0.5 & recent6x$Calibrated_Distance>-0.5] <- "pass"
+
+false_pos <- sum(recent6x$centre_mpc_test == "pass" & recent6x$centre_cal_test == "fail")
+true_pos <- sum(recent6x$centre_mpc_test == "pass" & recent6x$centre_cal_test == "pass")
+false_neg <- sum(recent6x$centre_mpc_test == "fail" & recent6x$centre_cal_test == "pass")
+true_neg <- sum(recent6x$centre_mpc_test == "fail" & recent6x$centre_cal_test == "fail")
+
+sens <- true_pos / (true_pos + false_neg)
+print(sens)
+
+spec <- true_neg / (true_neg + false_pos)
+print(spec)
+
+false_pos <- sum(df6x$centre_mpc_test == "pass" & df6x$centre_cal_test == "fail")
+true_pos <- sum(df6x$centre_mpc_test == "pass" & df6x$centre_cal_test == "pass")
+false_neg <- sum(df6x$centre_mpc_test == "fail" & df6x$centre_cal_test == "pass")
+true_neg <- sum(df6x$centre_mpc_test == "fail" & df6x$centre_cal_test == "fail")
+
+sens <- true_pos / (true_pos + false_neg)
+print(sens)
+
+spec <- true_neg / (true_neg + false_pos)
+print(spec)
+```
 
 
 Regression on the beam output change against time
