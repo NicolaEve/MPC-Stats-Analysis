@@ -388,7 +388,7 @@ summary(lm)
 
 plot the beam output change over time
 ```{r}
-ggplot(mpc_6x, aes(QA_Date, OutputChange)) +
+ggplot(df6x, aes(QA_Date, Output_Change)) +
   geom_point() +
   xlab("QA Date") +
   ylab("Output Change") +
@@ -401,15 +401,27 @@ SPC charts for the beam centre shift over time;
 the flatness and symmetry over time
 ```{r}
 
-qic(mpc_10x$MPC_Distance, chart = 'i')
-qic(mpc_10x$Calibrated_Distance, chart = 'i')
-qic(mpc_10x$MPC_Distance, chart = 'mr')
-qic(mpc_10x$Calibrated_Distance, chart = 'mr')
+qic(df10x$MPC_Distance, chart = 'i')
+qic(df10x$Calibrated_Distance, chart = 'i')
+qic(df10x$MPC_Distance, chart = 'mr')
+qic(df10x$Calibrated_Distance, chart = 'mr')
 
-qic(mpc_6x$OutputChange, x = mpc_6x$QA_Date, chart = 'xbar')
+qic(df6x$Output_Change, x = df6x$QA_Date, chart = 'xbar')
 
-qic(mpc_6x$Symmetry[mpc_6x$Transformed=1 & mpc_6x$Inline = 0], chart = 'mr')
+qic(df6x$SymmInAT, chart = 'mr')
+
 ```
 
 
+```{r}
+qic(recent6x$SymmInAT, x = recent6x$QA_Date, chart = 'mr')
+```
+box cox transformation to normal distribution
+```{r}
+library(MASS)
+help(boxcox)
+
+boxcox(recent6x$SymmInAT~1)
+
+```
 
