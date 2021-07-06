@@ -71,29 +71,20 @@ con <- DBI::dbConnect(odbc::odbc(),
                       Trusted_Connection = "True")
 ```
 
-Get the MPC view as a dataframe
-```{sql connection=con, output.var = "mpc_view"}
-SELECT *
-FROM MPC_View
-
-```
 
 Get a dataframe for each beam energy
-```{sql connection=con, output.var = "mpc_6x"}
+```{sql connection=con, output.var = "df6x"}
 SELECT *
-FROM MPC_View
-WHERE Beam_Energy = '6x'
+FROM "6x"
 ```
-```{sql connection=con, output.var = "mpc_10x"}
+```{sql connection=con, output.var = "df10x"}
 SELECT *
-FROM MPC_View
-WHERE Beam_Energy = '10x'
+FROM "10x"
 
 ```
-```{sql connection=con, output.var = "mpc_10fff"}
+```{sql connection=con, output.var = "df10fff"}
 SELECT *
-FROM MPC_View
-WHERE Beam_Energy = '10fff'
+FROM "10fff"
 
 ```
 
@@ -113,18 +104,68 @@ output_change_mpc <- describeBy(mpc_view$OutputChange, mpc_view$Beam_Energy)
 output_change_mpc
 ```
 
-
-Z-test and t-test to compare the beam center shift reported by the MPC and the one calculated in my algorithm
-
 check distributions are normal
+
 ```{r}
-check_distribution(mpc_6x$MPC_Distance)
-check_distribution(mpc_6x$Calibrated_Distance)
-check_distribution(mpc_10x$MPC_Distance)
-check_distribution(mpc_10x$Calibrated_Distance)
-check_distribution(mpc_10fff$MPC_Distance)
-check_distribution(mpc_10fff$Calibrated_Distance)
+
+check_all_distr <- function(df){
+check_distribution(df$SymmInAT)
+check_distribution(df$SymmInBT)
+check_distribution(df$SymmCrossAT)
+check_distribution(df$SymmCrossBT)
+
+check_distribution(df$FlatInAT)
+check_distribution(df$FlatInBT)
+check_distribution(df$FlatCrossAT)
+check_distribution(df$FlatCrossBT)
+
+check_distribution(df$MPC_Distance)
+check_distribution(df$Calibrated_Distance)
+
+check_distribution(df$Output_Change)
+
+check_distribution(df$Uniformity)
+}
+
 ```
+
+```{r}
+#check_all_distr(df6x)
+#check_all_distr(df10x)
+check_all_distr(df10fff)
+```
+
+
+get a dataframe for the values since the water phantom was imaged
+
+```{sql connection=con, output.var=recent6x}
+SELECt *
+FROM "6x"
+WHERE QA_Date >= '2021-04-01'
+
+```
+
+```{sql connection=con, output.var=recent10x}
+SELECt *
+FROM "10x"
+WHERE QA_Date >= '2021-04-01'
+
+```
+
+```{sql connection=con, output.var=recent10fff}
+SELECt *
+FROM "10fff"
+WHERE QA_Date >= '2021-04-01'
+
+```
+
+check distriubtions of the recent ones
+```{r}
+check_all_distr(recent6x)
+check_all_distr(recent10x)
+check_all_distr(recent10fff)
+```
+
 
 Boxplots comparing centre shift reported by MPC and calculated by my algorithm
 ```{r}
@@ -195,11 +236,7 @@ ggplot(mpc_6x, aes(QA_Date, OutputChange)) +
   ggtitle("Output Changes against Time")
 
 ```
-```{sql connection=con, output.var = "symm6x"}
-SELECT "Symmetry", "Flatness", "Beam_Energy", "Inline", "Transformed"
-FROM "Linked MPC Data"
-WHERE "Beam_Energy" = '6x'AND "Inline" = 1
-```
+
 compare the symmetry values once the calibration has been applied to before, for 6x inline
 ```{r}
 check_distribution(symm6x$Flatness)
@@ -216,62 +253,12 @@ wilcox.test(mpc_6x$MPC_Distance, mpc_6x$Calibrated_Distance)
 ```
 
 
-Repeat for crossline
-```{sql connection=con, output.var = "symm6xcross"}
-SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
-FROM "Linked MPC Data"
-WHERE "Beam_Energy" = '6x'AND "Inline" = 0
-
-```
-compare the symmetry values once the calibration has been applied to before, for 6x crossline
 ```{r}
 t.test(Symmetry ~ Transformed, data = symm6xcross)
 
 ```
 10x inline symmetry
-```{sql connection=con, output.var = "symm10xin"}
-SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
-FROM "Linked MPC Data"
-WHERE "Beam_Energy" = '10x'AND "Inline" = 1
-```
 
-```{r}
-t.test(Symmetry ~ Transformed, data = symm10xin)
-```
-Repeat for crossline
-```{sql connection=con, output.var = "symm10xcross"}
-SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
-FROM "Linked MPC Data"
-WHERE "Beam_Energy" = '10x'AND "Inline" = 0
-
-```
-
-```{r}
-t.test(Symmetry ~ Transformed, data = symm10xcross)
-
-```
-
-10FFF
-
-```{sql connection=con, output.var = "symm10fffin"}
-SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
-FROM "Linked MPC Data"
-WHERE "Beam_Energy" = '10fff'AND "Inline" = 1
-
-```
-
-```{r}
-t.test(Symmetry ~ Transformed, data = symm10fffin)
-
-```
-
-Repeat for crossline
-```{sql connection=con, output.var = "symm10fffcross"}
-SELECT "Symmetry", "Beam_Energy", "Inline", "Transformed"
-FROM "Linked MPC Data"
-WHERE "Beam_Energy" = '10fff'AND "Inline" = 0
-
-```
 
 ```{r}
 t.test(Symmetry ~ Transformed, data = symm10fffcross)
