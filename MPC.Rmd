@@ -382,7 +382,7 @@ Regression on the beam output change against time
 should it be linear?
 
 ```{r}
-lm <- lm(OutputChange ~ QA_Date, data = mpc_6x)
+lm <- lm(Output_Change ~ QA_Date, data = df6x)
 summary(lm)
 ```
 
@@ -394,6 +394,23 @@ ggplot(df6x, aes(QA_Date, Output_Change)) +
   ylab("Output Change") +
   ggtitle("Output Changes against Time")
 
+```
+polynomial regression model
+
+```{r}
+df6x$index <- 1:length(df6x$Output_Change)
+
+fit3 <- lm(Output_Change ~ poly(index , 56, raw=TRUE), df6x)  
+fit4 <- lm(Output_Change ~ poly(index , 14, raw=TRUE), df6x)  ## quartic
+summary(fit3)
+
+plot(df6x$Output_Change, main="plot", xaxt="n")
+tck <- c(1, 50, 100, 150)
+axis(1, tck, labels=FALSE)
+mtext(df6x$QA_Date[tck], 1, 1, at=tck)
+lines(fit3$fitted.values, col=3, lwd=2)
+lines(fit4$fitted.values, col=2, lwd=2)
+legend("topleft", c("cubic", "quartic"), lwd=2, col=3:2)
 ```
 
 
