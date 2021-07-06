@@ -281,8 +281,6 @@ df6x$uniformity_test[df6x$Uniformity<2 & df6x$Uniformity>-2] <- "pass"
 df6x$symm_test <- "fail"
 df6x$symm_test[df6x$SymmInAT<2 & df6x$SymmInAT>-2 & df6x$SymmCrossAT<2 & df6x$SymmCrossAT>-2] <- "pass"
 
-#sum(df6x$uniformity_test == "pass")
-sum(df6x$symm_test == "pass") / sum(df6x$uniformity_test == "pass")
 
 recent6x$uniformity_test <- "fail"
 recent6x$uniformity_test[recent6x$Uniformity<2 & recent6x$Uniformity>-2] <- "pass"
@@ -290,8 +288,27 @@ recent6x$uniformity_test[recent6x$Uniformity<2 & recent6x$Uniformity>-2] <- "pas
 recent6x$symm_test <- "fail"
 recent6x$symm_test[recent6x$SymmInAT<2 & recent6x$SymmInAT>-2 & recent6x$SymmCrossAT<2 & recent6x$SymmCrossAT>-2] <- "pass"
 
-#sum(recent6x$uniformity_test == "pass")
-sum(recent6x$symm_test == "pass") / sum(recent6x$uniformity_test == "pass")
+false_pos <- sum(recent6x$uniformity_test == "pass" & recent6x$symm_test == "fail")
+true_pos <- sum(recent6x$uniformity_test == "pass" & recent6x$symm_test == "pass")
+false_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$symm_test == "pass")
+true_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$symm_test == "fail")
+
+sens <- true_pos / (true_pos + false_neg)
+print(sens)
+
+spec <- true_neg / (true_neg + false_pos)
+print(spec)
+
+false_pos <- sum(df6x$uniformity_test == "pass" & df6x$symm_test == "fail")
+true_pos <- sum(df6x$uniformity_test == "pass" & df6x$symm_test == "pass")
+false_neg <- sum(df6x$uniformity_test == "fail" & df6x$symm_test == "pass")
+true_neg <- sum(df6x$uniformity_test == "fail" & df6x$symm_test == "fail")
+
+sens <- true_pos / (true_pos + false_neg)
+print(sens)
+
+spec <- true_neg / (true_neg + false_pos)
+print(spec)
 ```
 
 
