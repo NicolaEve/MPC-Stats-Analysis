@@ -60,6 +60,20 @@ check_distribution(df$Uniformity)
 }
 
 
+wilcox_all <- function(df){
+print(wilcox.test(df$SymmInAT, df$SymmInBT, paired = TRUE))
+print(wilcox.test(df$SymmCrossBT, df$SymmCrossAT, paired = TRUE))
+
+print(wilcox.test(df$SymmInAT, df$SymmCrossAT, paired = TRUE))
+print(wilcox.test(df$SymmInBT, df$SymmCrossBT, paired = TRUE))
+
+print(wilcox.test(df$FlatCrossAT, df$FlatCrossBT, paired = TRUE))
+print(wilcox.test(df$FlatInAT, df$FlatInBT, paired = TRUE))
+
+print(wilcox.test(df$FlatInAT, df$FlatCrossAT, paired = TRUE))
+print(wilcox.test(df$FlatInBT, df$FlatCrossBT, paired = TRUE))
+}
+
 # function to return 2-sample z statistic and p value
 z.test <- function(x, y){
   # get the sample mean, sd and n
@@ -225,45 +239,23 @@ p<0.05 so we say the distributions are significantly different
 So applying the calibration significantyl changes the distribtion
 before calibration, inline and crossline are significantly different but after they're not for symmetry; and both sig diff for flat.
 ```{r}
-wilcox.test(df6x$SymmInAT, df6x$SymmInBT, paired = TRUE)
-wilcox.test(df6x$SymmCrossBT, df6x$SymmCrossAT, paired = TRUE)
-
-wilcox.test(df6x$SymmInAT, df6x$SymmCrossAT, paired = TRUE)
-wilcox.test(df6x$SymmInBT, df6x$SymmCrossBT, paired = TRUE)
-
-wilcox.test(df6x$FlatCrossAT, df6x$FlatCrossBT, paired = TRUE)
-wilcox.test(df6x$FlatInAT, df6x$FlatInBT, paired = TRUE)
-
-wilcox.test(df6x$FlatInAT, df6x$FlatCrossAT, paired = TRUE)
-wilcox.test(df6x$FlatInBT, df6x$FlatCrossBT, paired = TRUE)
+wilcox_all(df6x)
+wilcox_all(recent6x)
+wilcox_all(df10x)
+wilcox_all(recent10x)
+wilcox_all(df10fff)
+wilcox_all(recent10fff)
 ```
+beam centre shift
 ```{r}
-wilcox.test(df10x$SymmInAT, df10x$SymmInBT, paired = TRUE)
-wilcox.test(df10x$SymmCrossBT, df10x$SymmCrossAT, paired = TRUE)
+wilcox.test(df6x$MPC_Distance, df6x$Calibrated_Distance)
+wilcox.test(df10x$MPC_Distance, df10x$Calibrated_Distance)
+wilcox.test(df10fff$MPC_Distance, df10fff$Calibrated_Distance)
 
-wilcox.test(df10x$SymmInAT, df10x$SymmCrossAT, paired = TRUE)
-wilcox.test(df10x$SymmInBT, df10x$SymmCrossBT, paired = TRUE)
-
-wilcox.test(df10x$FlatCrossAT, df10x$FlatCrossBT, paired = TRUE)
-wilcox.test(df10x$FlatInAT, df10x$FlatInBT, paired = TRUE)
-
-wilcox.test(df10x$FlatInAT, df10x$FlatCrossAT, paired = TRUE)
-wilcox.test(df10x$FlatInBT, df10x$FlatCrossBT, paired = TRUE)
+wilcox.test(recent6x$MPC_Distance, recent6x$Calibrated_Distance)
+wilcox.test(recent10x$MPC_Distance, recent10x$Calibrated_Distance)
+wilcox.test(recent10fff$MPC_Distance, recent10fff$Calibrated_Distance)
 ```
-```{r}
-wilcox.test(df10fff$SymmInAT, df10fff$SymmInBT, paired = TRUE)
-wilcox.test(df10fff$SymmCrossBT, df10fff$SymmCrossAT, paired = TRUE)
-
-wilcox.test(df10fff$SymmInAT, df10fff$SymmCrossAT, paired = TRUE)
-wilcox.test(df10fff$SymmInBT, df10fff$SymmCrossBT, paired = TRUE)
-
-wilcox.test(df10fff$FlatCrossAT, df10fff$FlatCrossBT, paired = TRUE)
-wilcox.test(df10fff$FlatInAT, df10fff$FlatInBT, paired = TRUE)
-
-wilcox.test(df10fff$FlatInAT, df10fff$FlatCrossAT, paired = TRUE)
-wilcox.test(df10fff$FlatInBT, df10fff$FlatCrossBT, paired = TRUE)
-```
-
 
 Thresholds for passing the MPC tests are
 centre shift = 0.5
@@ -279,6 +271,28 @@ mpc_6x$mpc_distance_pass <- "fail"
 mpc_6x$mpc_distance_pass[mpc_6x$MPC_Distance<0.5 & mpc_6x$MPC_Distance> -0.5] <- "pass"
 ```
 
+Add column which will be a pass/fail for the mpc uniformity and one for if any of the 4 symm/flat fails
+or for how sensitive the symm is to uniformity and then how sensitive flatness is to uniformity
+Then we can do sensitivty and specifity
+```{r}
+df6x$uniformity_test <- "fail"
+df6x$uniformity_test[df6x$Uniformity<2 & df6x$Uniformity>-2] <- "pass"
+
+df6x$symm_test <- "fail"
+df6x$symm_test[df6x$SymmInAT<2 & df6x$SymmInAT>-2 & df6x$SymmCrossAT<2 & df6x$SymmCrossAT>-2] <- "pass"
+
+#sum(df6x$uniformity_test == "pass")
+sum(df6x$symm_test == "pass") / sum(df6x$uniformity_test == "pass")
+
+recent6x$uniformity_test <- "fail"
+recent6x$uniformity_test[recent6x$Uniformity<2 & recent6x$Uniformity>-2] <- "pass"
+
+recent6x$symm_test <- "fail"
+recent6x$symm_test[recent6x$SymmInAT<2 & recent6x$SymmInAT>-2 & recent6x$SymmCrossAT<2 & recent6x$SymmCrossAT>-2] <- "pass"
+
+#sum(recent6x$uniformity_test == "pass")
+sum(recent6x$symm_test == "pass") / sum(recent6x$uniformity_test == "pass")
+```
 
 
 Regression on the beam output change against time
