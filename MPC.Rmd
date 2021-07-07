@@ -229,6 +229,20 @@ z.paired(rand_10fff$FlatInBT, rand_10fff$FlatInAT, 0, alpha = 0.05)
 boxplot(df10fff$FlatCrossBT, df10fff$FlatCrossAT)
 z.paired(rand_10fff$FlatCrossBT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
 ```
+Compare the beam centre shift
+```{r}
+boxplot(df6x$MPC_Distance, df6x$Calibrated_Distance)
+z.paired(rand_df$MPC_Distance, rand_df$Calibrated_Distance, 0.5, alpha = 0.05)
+
+boxplot(df10x$MPC_Distance, df10x$Calibrated_Distance)
+z.paired(rand_10x$MPC_Distance, rand_10x$Calibrated_Distance, 0.5, alpha = 0.05)
+
+boxplot(df10fff$MPC_Distance, df10fff$Calibrated_Distance)
+z.paired(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance, 0.5, alpha = 0.05)
+
+```
+
+
 Thresholds for passing the MPC tests are
 centre shift = 0.5
 OutputChange = 2
@@ -305,7 +319,7 @@ print(sens)
 spec <- true_neg / (true_neg + false_pos)
 print(spec)
 ```
-sens/spec of beam centre shift
+sensitivity and specificity of beam centre shift
 the MPC distance is always within 0.5mm threshold
 ```{r}
 df6x$centre_mpc_test <- "fail"
@@ -376,7 +390,7 @@ Polynomial regression on this year
 recent6x$index <- 1:length(recent6x$Output_Change)
 
 fit <- lm(Output_Change ~ poly(index , 56, raw=TRUE), recent6x)  
-fit4 <- lm(Output_Change ~ poly(index , 14, raw=TRUE), recent6x)  ## quartic
+fit4 <- lm(Output_Change ~ poly(index , 14, raw=TRUE), recent6x)
 summary(fit3)
 
 plot(recent6x$Output_Change, main="plot", xaxt="n")
