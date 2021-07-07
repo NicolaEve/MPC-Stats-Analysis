@@ -62,7 +62,7 @@ z.test <- function(x, y){
   return(c(z_stat, p))
 }
 
-z.paired <- function(x, y, d0){
+z.paired <- function(x, y, d0, alpha){
   mean_diff <- mean(x-y)
   sigma_diff <- sqrt(var(x)+var(y)-2*cov(x,y))
   n <- length(x)
@@ -72,14 +72,12 @@ z.paired <- function(x, y, d0){
     # qnorm gives the alpha quantile of the standard normal  distribution
   # reject H0 that difference of means = d0 if z < z(alpha/2) or
   # z > z(1-alpha/2)
-  alpha = 0.05
-  alpha2 = 0.01
   
   
-  if(z < qnorm(alpha/2)) {print("Null hypothesis can be rejected. Evidence the difference in means is not equal to", d0)}
+  if(z < qnorm(alpha/2)) {cat("Null hypothesis can be rejected. Evidence the difference in means is not equal to", d0)}
   if (z > qnorm(1 - (alpha/2))) {
   print("Null hypothesis can be rejected. Evidence the difference in means is not equal to", d0)}
-  else {  print("Null hypothesis can not be rejected, evidence the difference in means is equal to", d0)}
+  if ( qnorm(alpha/2)< z & z < qnorm(1- (alpha/2))) {  cat("Null hypothesis can not be rejected, evidence the difference in means is equal to", d0)}
   
   return(c(z, p_value))
 }
@@ -148,31 +146,39 @@ check distributions are normal - irrelevant since we have large sample sizes (ov
 Comparing the symmetry and flatness before and after the calibration applied; and in inline and crossline directions
 We use paired z tests
 Z test null hypothesis: the means of the two groups are equal
+
+
+Taking a random sample from the data and applying paired Z test
+Energy: 6x
+Comparing: Symmetry inline and crossline directions after calibration
+The Z test statistic is inside the 95% confidence interval, so we can not reject the null hypothesis. 
+The p-value tells us how statistically significant this is and it is quite large; but still we don't have enough evidence to reject the null hypothesis.
 ```{r}
-#z.test(df6x$MPC_Distance, df6x$Calibrated_Distance)
-#z.test(df6x$SymmInAT, df6x$SymmCrossAT)
-#z.test(df6x$SymmCrossBT, df6x$SymmCrossAT)
-# p values greater than 1?
-
-#z.paired(df6x$SymmInAT, df6x$SymmInBT, 0)
-#z.paired(df6x$SymmCrossAT, df6x$SymmCrossBT, 0)
-#z.paired(recent6x$SymmInAT, recent6x$SymmCrossAT, 0)
-
-#z.paired(recent6x$FlatInAT, recent6x$FlatCrossAT, 0)
-#z.paired(recent6x$FlatInBT, recent6x$FlatInAT, 0)
-
 boxplot(df6x$SymmInAT, df6x$SymmCrossAT)
-z.paired(df6x$SymmInAT, df6x$SymmCrossAT, 0)
-pnorm(-1.96)
+set.seed(1) # set seed makes the analysis reproducible
+rand_df <- df6x[sample(nrow(df6x), size=100), ]
+z.paired(rand_df$SymmInAT, rand_df$SymmCrossAT, 0, alpha = 0.05)
 ```
 
-Taking a random sample from the data
+Energy 10x
+Comparing symmetry inline and crossline after calibration
+The null hypothesis can be rejected at a good confidence level. The means are statistically significantly different, with a good level of confidence due to the small p value. 
 ```{r}
-set.seed(2) # set seed makes the analysis reproducible
-rand_df <- df6x[sample(nrow(df6x), size=300), ]
-z.paired(rand_df$SymmInAT, rand_df$SymmCrossAT, 0)
+boxplot(df10x$SymmInAT, df10x$SymmCrossAT)
+set.seed(6) # set seed makes the analysis reproducible
+rand_10x <- df10x[sample(nrow(df10x), size=100), ]
+z.paired(rand_10x$SymmInAT, rand_10x$SymmCrossAT, 0, alpha = 0.05)
 ```
-
+Energy 10fff
+Comparing symmetry inline and crossline
+Null hypothesis can be rejected at a good level of confidence (small p value)
+Means are significantly different.
+```{r}
+boxplot(df10fff$SymmInAT, df10fff$SymmCrossAT)
+set.seed(2) # set seed makes the analysis reproducible
+rand_10fff <- df10fff[sample(nrow(df10fff), size=100), ]
+z.paired(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
+```
 
 beam centre shift
 ```{r}
