@@ -31,7 +31,6 @@ library(distributions3)
 ```
 
 Define functions
-is the z test paired? 
 ```{r}
 # function to check the distribution of the data input
 check_distribution <- function(data){
@@ -40,9 +39,9 @@ check_distribution <- function(data){
   plot(normal_dist)
 }
 
+```
 
-
-
+```{r}
 # function to return 2-sample z statistic and p value
 z.test <- function(x, y){
   # get the sample mean, sd and n
@@ -61,7 +60,9 @@ z.test <- function(x, y){
   p = 2 * cdf(Z, abs(z_stat))
   return(c(z_stat, p))
 }
+```
 
+```{r}
 z.paired <- function(x, y, d0, alpha){
   mean_diff <- mean(x-y)
   sigma_diff <- sqrt(var(x)+var(y)-2*cov(x,y))
@@ -140,9 +141,6 @@ describeBy(df6x$Uniformity)
 describeBy(df6x$Output_Change)
 ```
 
-check distributions are normal - irrelevant since we have large sample sizes (over 30)
-
-
 Comparing the symmetry and flatness before and after the calibration applied; and in inline and crossline directions
 We use paired z tests
 Z test null hypothesis: the means of the two groups are equal
@@ -158,6 +156,9 @@ boxplot(df6x$SymmInAT, df6x$SymmCrossAT)
 set.seed(1) # set seed makes the analysis reproducible
 rand_df <- df6x[sample(nrow(df6x), size=100), ]
 z.paired(rand_df$SymmInAT, rand_df$SymmCrossAT, 0, alpha = 0.05)
+
+boxplot(df6x$FlatInAT, df6x$FlatCrossAT)
+z.paired(rand_df$FlatInAT, rand_df$FlatCrossAT, 0, alpha = 0.05)
 ```
 
 Energy 10x
@@ -168,6 +169,9 @@ boxplot(df10x$SymmInAT, df10x$SymmCrossAT)
 set.seed(6) # set seed makes the analysis reproducible
 rand_10x <- df10x[sample(nrow(df10x), size=100), ]
 z.paired(rand_10x$SymmInAT, rand_10x$SymmCrossAT, 0, alpha = 0.05)
+
+boxplot(df10x$FlatInAT, df10x$FlatCrossAT)
+z.paired(rand_10x$FlatInAT, rand_10x$FlatCrossAT, 0, alpha = 0.05)
 ```
 Energy 10fff
 Comparing symmetry inline and crossline
@@ -178,6 +182,9 @@ boxplot(df10fff$SymmInAT, df10fff$SymmCrossAT)
 set.seed(2) # set seed makes the analysis reproducible
 rand_10fff <- df10fff[sample(nrow(df10fff), size=100), ]
 z.paired(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
+
+boxplot(df10fff$FlatInAT, df10fff$FlatCrossAT)
+z.paired(rand_10fff$FlatInAT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
 ```
 
 beam centre shift
