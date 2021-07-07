@@ -186,35 +186,60 @@ z.paired(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
 boxplot(df10fff$FlatInAT, df10fff$FlatCrossAT)
 z.paired(rand_10fff$FlatInAT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
 ```
-
-beam centre shift
+Paired Z tests to see if there's a significant difference as a result of applying the calibration transformation.
+6x
 ```{r}
-wilcox.test(df6x$MPC_Distance, df6x$Calibrated_Distance)
-wilcox.test(df10x$MPC_Distance, df10x$Calibrated_Distance)
-wilcox.test(df10fff$MPC_Distance, df10fff$Calibrated_Distance)
+boxplot(df6x$SymmInBT, df6x$SymmInAT)
+z.paired(rand_df$SymmInBT, rand_df$SymmInAT, 0, alpha = 0.05)
 
-wilcox.test(recent6x$MPC_Distance, recent6x$Calibrated_Distance)
-wilcox.test(recent10x$MPC_Distance, recent10x$Calibrated_Distance)
-wilcox.test(recent10fff$MPC_Distance, recent10fff$Calibrated_Distance)
+boxplot(df6x$SymmCrossBT, df6x$SymmCrossAT)
+z.paired(rand_df$SymmCrossBT, rand_df$SymmCrossAT, 0, alpha = 0.05)
+
+boxplot(df6x$FlatInBT, df6x$FlatInAT)
+z.paired(rand_df$FlatInBT, rand_df$FlatInAT, 0, alpha = 0.05)
+
+boxplot(df6x$FlatCrossBT, df6x$FlatCrossAT)
+z.paired(rand_df$FlatCrossBT, rand_df$FlatCrossAT, 0, alpha = 0.05)
 ```
+10x
+```{r}
+boxplot(df10x$SymmInBT, df10x$SymmInAT)
+z.paired(rand_10x$SymmInBT, rand_10x$SymmInAT, 0, alpha = 0.05)
 
+boxplot(df10x$SymmCrossBT, df10x$SymmCrossAT)
+z.paired(rand_10x$SymmCrossBT, rand_10x$SymmCrossAT, 0, alpha = 0.05)
+
+boxplot(df10x$FlatInBT, df10x$FlatInAT)
+z.paired(rand_10x$FlatInBT, rand_10x$FlatInAT, 0, alpha = 0.05)
+
+boxplot(df10x$FlatCrossBT, df10x$FlatCrossAT)
+z.paired(rand_10x$FlatCrossBT, rand_10x$FlatCrossAT, 0, alpha = 0.05)
+```
+10fff
+```{r}
+boxplot(df10fff$SymmInBT, df10fff$SymmInAT)
+z.paired(rand_10fff$SymmInBT, rand_10fff$SymmInAT, 0, alpha = 0.05)
+
+boxplot(df10fff$SymmCrossBT, df10fff$SymmCrossAT)
+z.paired(rand_10fff$SymmCrossBT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
+
+boxplot(df10fff$FlatInBT, df10fff$FlatInAT)
+z.paired(rand_10fff$FlatInBT, rand_10fff$FlatInAT, 0, alpha = 0.05)
+
+boxplot(df10fff$FlatCrossBT, df10fff$FlatCrossAT)
+z.paired(rand_10fff$FlatCrossBT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
+```
 Thresholds for passing the MPC tests are
 centre shift = 0.5
 OutputChange = 2
 Uniformity = 2
-Create a conditional column for if it passed/failed on my algorithm and on mpc
-will this give sensitivity and specificity ?
+
+Add column which will be a pass/fail for the mpc uniformity and one for if any of the 4 symm/flat fails
+will this give sensitivity and specificity 
 or it will give another metric for comparative stats
 there's no mpc that fail and loads of calibrated that do
 should there be a cut off?
-```{r}
-mpc_6x$mpc_distance_pass <- "fail"
-mpc_6x$mpc_distance_pass[mpc_6x$MPC_Distance<0.5 & mpc_6x$MPC_Distance> -0.5] <- "pass"
-```
 
-Add column which will be a pass/fail for the mpc uniformity and one for if any of the 4 symm/flat fails
-or for how sensitive the symm is to uniformity and then how sensitive flatness is to uniformity
-Then we can do sensitivty and specifity
 ```{r}
 df6x$uniformity_test <- "fail"
 df6x$uniformity_test[df6x$Uniformity<2 & df6x$Uniformity>-2] <- "pass"
@@ -383,12 +408,5 @@ qic(df6x$SymmInAT, chart = 'mr')
 ```{r}
 qic(recent6x$SymmInAT, x = recent6x$QA_Date, chart = 'mr')
 ```
-box cox transformation to normal distribution
-```{r}
-library(MASS)
-help(boxcox)
 
-boxcox(recent6x$SymmInAT~1)
-
-```
 
