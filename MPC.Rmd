@@ -149,7 +149,7 @@ Z test null hypothesis: the means of the two groups are equal
 The Z test statistic is inside the 95% confidence interval, so we can not reject the null hypothesis. 
 The p-value tells us how statistically significant this is and it is quite large; but still we don't have enough evidence to reject the null hypothesis.
 ```{r}
-boxplot(rand_6x$SymmInAT, rand6x$SymmCrossAT)
+boxplot(rand_6x$SymmInAT, rand_6x$SymmCrossAT)
 z.paired(rand_6x$SymmInAT, rand_6x$SymmCrossAT, 0, alpha = 0.05)
 
 boxplot(rand_6x$FlatInAT, rand_6x$FlatCrossAT)
@@ -379,22 +379,22 @@ boxplot(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT, rand_10fff$Uniformity)
 Is there a correlation between the symmetry and the uniformity?
 ```{r}
 
-fit3 <- lm(SymmInAT ~ poly(SymmCrossAT , 4, raw=TRUE), recent6x)  
+fit3 <- lm(SymmInAT ~ poly(SymmCrossAT , 4, raw=TRUE), recent6x) # random sample of whole dataset? 
 summary(fit3)
 
-cor.test(rand_recent6x$SymmCrossAT, rand_recent6x$SymmInAT)
+cor.test(rand_6x$SymmCrossAT, rand_6x$SymmInAT)
 
-cor.test(rand_recent6x$Uniformity, rand_recent6x$SymmInAT)
-cor.test(rand_recent6x$Uniformity, rand_recent6x$SymmCrossAT)
+cor.test(rand_6x$Uniformity, rand_6x$SymmInAT)
+cor.test(rand_6x$Uniformity, rand_6x$SymmCrossAT)
 
-cor.test(rand_recent6x$FlatInAT, rand_recent6x$FlatCrossAT)
-cor.test(rand_recent6x$Uniformity, rand_recent6x$FlatCrossAT)
-cor.test(rand_recent6x$Uniformity, rand_recent6x$FlatInAT)
+cor.test(rand_6x$FlatInAT, rand_6x$FlatCrossAT)
+cor.test(rand_6x$Uniformity, rand_6x$FlatCrossAT)
+cor.test(rand_6x$Uniformity, rand_6x$FlatInAT)
 
-ggplot(recent6x, aes(x = FlatInAT, y = FlatCrossAT)) +
+ggplot(rand_6x, aes(x = FlatInAT, y = FlatCrossAT)) +
   geom_point(color = "blue") 
 
-ggplot(recent6x, aes(QA_Date)) +
+ggplot(rand_6x, aes(QA_Date)) +
    geom_point(aes(y = Uniformity), color = "red") + 
   geom_point(aes(y = FlatInAT-100), color = "blue") +
   geom_point(aes(y = FlatCrossAT-100), color = "yellow")
