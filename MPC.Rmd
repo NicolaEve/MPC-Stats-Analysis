@@ -31,15 +31,6 @@ library(distributions3)
 ```
 
 Define functions
-```{r}
-# function to check the distribution of the data input
-check_distribution <- function(data){
-  descdist(data, discrete = FALSE)
-  normal_dist <- fitdist(data, "norm")
-  plot(normal_dist)
-}
-
-```
 
 ```{r}
 # function to return 2-sample z statistic and p value
@@ -143,36 +134,35 @@ describeBy(df6x$Uniformity)
 describeBy(df6x$Output_Change)
 ```
 
-Comparing the symmetry and flatness before and after the calibration applied; and in inline and crossline directions
-We use paired z tests
-Z test null hypothesis: the means of the two groups are equal
 
+Define the random samples
+```{r}
+set.seed(1) # set seed makes the analysis reproducible
+rand_6x <- recent6x[sample(nrow(recent6x), size=50), ]
+rand_10x <- recent10x[sample(nrow(recent10x), size=50), ]
+rand_10fff <- recent10fff[sample(nrow(recent10fff), size=50), ]
+```
 
-Taking a random sample from the data and applying paired Z test
 Energy: 6x
 Comparing: Symmetry inline and crossline directions after calibration
+Z test null hypothesis: the means of the two groups are equal
 The Z test statistic is inside the 95% confidence interval, so we can not reject the null hypothesis. 
 The p-value tells us how statistically significant this is and it is quite large; but still we don't have enough evidence to reject the null hypothesis.
 ```{r}
-boxplot(df6x$SymmInAT, df6x$SymmCrossAT)
-set.seed(1) # set seed makes the analysis reproducible
-rand_df <- df6x[sample(nrow(df6x), size=100), ]
-z.paired(rand_df$SymmInAT, rand_df$SymmCrossAT, 0, alpha = 0.05)
+boxplot(rand_6x$SymmInAT, rand6x$SymmCrossAT)
+z.paired(rand_6x$SymmInAT, rand_6x$SymmCrossAT, 0, alpha = 0.05)
 
-boxplot(df6x$FlatInAT, df6x$FlatCrossAT)
-z.paired(rand_df$FlatInAT, rand_df$FlatCrossAT, 0, alpha = 0.05)
+boxplot(rand_6x$FlatInAT, rand_6x$FlatCrossAT)
+z.paired(rand_6x$FlatInAT, rand_6x$FlatCrossAT, 0, alpha = 0.05)
 ```
-
 Energy 10x
 Comparing symmetry inline and crossline after calibration
 The null hypothesis can be rejected at a good confidence level. The means are statistically significantly different, with a good level of confidence due to the small p value. 
 ```{r}
-boxplot(df10x$SymmInAT, df10x$SymmCrossAT)
-set.seed(6) # set seed makes the analysis reproducible
-rand_10x <- df10x[sample(nrow(df10x), size=100), ]
+boxplot(rand_10x$SymmInAT, rand_10x$SymmCrossAT)
 z.paired(rand_10x$SymmInAT, rand_10x$SymmCrossAT, 0, alpha = 0.05)
 
-boxplot(df10x$FlatInAT, df10x$FlatCrossAT)
+boxplot(rand_10x$FlatInAT, rand_10x$FlatCrossAT)
 z.paired(rand_10x$FlatInAT, rand_10x$FlatCrossAT, 0, alpha = 0.05)
 ```
 Energy 10fff
@@ -180,71 +170,71 @@ Comparing symmetry inline and crossline
 Null hypothesis can be rejected at a good level of confidence (small p value)
 Means are significantly different.
 ```{r}
-boxplot(df10fff$SymmInAT, df10fff$SymmCrossAT)
-set.seed(2) # set seed makes the analysis reproducible
-rand_10fff <- df10fff[sample(nrow(df10fff), size=100), ]
+boxplot(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT)
 z.paired(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
 
-boxplot(df10fff$FlatInAT, df10fff$FlatCrossAT)
+boxplot(rand_10fff$FlatInAT, rand_10fff$FlatCrossAT)
 z.paired(rand_10fff$FlatInAT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
 ```
+
 Paired Z tests to see if there's a significant difference as a result of applying the calibration transformation.
 6x
 ```{r}
-boxplot(df6x$SymmInBT, df6x$SymmInAT)
-z.paired(rand_df$SymmInBT, rand_df$SymmInAT, 0, alpha = 0.05)
+boxplot(rand_6x$SymmInBT, rand_6x$SymmInAT)
+z.paired(rand_6x$SymmInBT, rand_6x$SymmInAT, 0, alpha = 0.05)
 
-boxplot(df6x$SymmCrossBT, df6x$SymmCrossAT)
-z.paired(rand_df$SymmCrossBT, rand_df$SymmCrossAT, 0, alpha = 0.05)
+boxplot(rand_6x$SymmCrossBT, rand_6x$SymmCrossAT)
+z.paired(rand_6x$SymmCrossBT, rand_6x$SymmCrossAT, 0, alpha = 0.05)
 
-boxplot(df6x$FlatInBT, df6x$FlatInAT)
-z.paired(rand_df$FlatInBT, rand_df$FlatInAT, 0, alpha = 0.05)
+boxplot(rand_6x$FlatInBT, rand_6x$FlatInAT)
+z.paired(rand_6x$FlatInBT, rand_6x$FlatInAT, 0, alpha = 0.05)
 
-boxplot(df6x$FlatCrossBT, df6x$FlatCrossAT)
-z.paired(rand_df$FlatCrossBT, rand_df$FlatCrossAT, 0, alpha = 0.05)
+boxplot(rand_6x$FlatCrossBT, rand_6x$FlatCrossAT)
+z.paired(rand_6x$FlatCrossBT, rand_6x$FlatCrossAT, 0, alpha = 0.05)
 ```
 10x
 ```{r}
-boxplot(df10x$SymmInBT, df10x$SymmInAT)
+boxplot(rand_10x$SymmInBT, rand_10x$SymmInAT)
 z.paired(rand_10x$SymmInBT, rand_10x$SymmInAT, 0, alpha = 0.05)
 
-boxplot(df10x$SymmCrossBT, df10x$SymmCrossAT)
+boxplot(rand_10x$SymmCrossBT, rand_10x$SymmCrossAT)
 z.paired(rand_10x$SymmCrossBT, rand_10x$SymmCrossAT, 0, alpha = 0.05)
 
-boxplot(df10x$FlatInBT, df10x$FlatInAT)
+boxplot(rand_10x$FlatInBT, rand_10x$FlatInAT)
 z.paired(rand_10x$FlatInBT, rand_10x$FlatInAT, 0, alpha = 0.05)
 
-boxplot(df10x$FlatCrossBT, df10x$FlatCrossAT)
+boxplot(rand_10x$FlatCrossBT, rand_10x$FlatCrossAT)
 z.paired(rand_10x$FlatCrossBT, rand_10x$FlatCrossAT, 0, alpha = 0.05)
 ```
 10fff
 ```{r}
-boxplot(df10fff$SymmInBT, df10fff$SymmInAT)
+boxplot(rand_10fff$SymmInBT, rand_10fff$SymmInAT)
 z.paired(rand_10fff$SymmInBT, rand_10fff$SymmInAT, 0, alpha = 0.05)
 
-boxplot(df10fff$SymmCrossBT, df10fff$SymmCrossAT)
+boxplot(rand_10fff$SymmCrossBT, rand_10fff$SymmCrossAT)
 z.paired(rand_10fff$SymmCrossBT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
 
-boxplot(df10fff$FlatInBT, df10fff$FlatInAT)
+boxplot(rand_10fff$FlatInBT, rand_10fff$FlatInAT)
 z.paired(rand_10fff$FlatInBT, rand_10fff$FlatInAT, 0, alpha = 0.05)
 
-boxplot(df10fff$FlatCrossBT, df10fff$FlatCrossAT)
+boxplot(rand_10fff$FlatCrossBT, rand_10fff$FlatCrossAT)
 z.paired(rand_10fff$FlatCrossBT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
 ```
+
 Compare the beam centre shift
 ```{r}
-boxplot(df6x$MPC_Distance, df6x$Calibrated_Distance)
-z.paired(rand_df$MPC_Distance, rand_df$Calibrated_Distance, 0.5, alpha = 0.05)
+boxplot(rand_6x$MPC_Distance, rand_6x$Calibrated_Distance)
+z.paired(rand_6x$MPC_Distance, rand_6x$Calibrated_Distance, 0.5, alpha = 0.05)
 
-boxplot(df10x$MPC_Distance, df10x$Calibrated_Distance)
+boxplot(rand_10x$MPC_Distance, rand_10x$Calibrated_Distance)
 z.paired(rand_10x$MPC_Distance, rand_10x$Calibrated_Distance, 0.5, alpha = 0.05)
 
-boxplot(df10fff$MPC_Distance, df10fff$Calibrated_Distance)
+boxplot(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance)
 z.paired(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance, 0.5, alpha = 0.05)
 
 ```
 
-Comparing the symmetry and flatness to Uniformity
+Comparing the symmetry and flatness to Uniformity in terms of pass/fail sensitivity and specificity 
 
 Thresholds for passing the MPC tests are
 centre shift = 0.5
@@ -252,22 +242,15 @@ OutputChange = 2
 Uniformity = 2
 
 Add column which will be a pass/fail for the mpc uniformity and one for if any of the 4 symm/flat fails
-will this give sensitivity and specificity 
-or it will give another metric for comparative stats
-there's no mpc that fail and loads of calibrated that do
-should there be a cut off?
+
+6x symmetry
 
 ```{r}
-df6x$uniformity_test <- "fail"
-df6x$uniformity_test[df6x$Uniformity<2 & df6x$Uniformity>-2] <- "pass"
-
-df6x$symm_test <- "fail"
-df6x$symm_test[df6x$SymmInAT<2 & df6x$SymmInAT>-2 & df6x$SymmCrossAT<2 & df6x$SymmCrossAT>-2] <- "pass"
-
-
+# set up the df with pass/fail columns - is this necessary? yes for readibilty
 recent6x$uniformity_test <- "fail"
 recent6x$uniformity_test[recent6x$Uniformity<2 & recent6x$Uniformity>-2] <- "pass"
 
+# fail if 1 of them fails
 recent6x$symm_test <- "fail"
 recent6x$symm_test[recent6x$SymmInAT<2 & recent6x$SymmInAT>-2 & recent6x$SymmCrossAT<2 & recent6x$SymmCrossAT>-2] <- "pass"
 
@@ -277,25 +260,51 @@ false_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$symm_test == "pas
 true_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$symm_test == "fail")
 
 sens <- true_pos / (true_pos + false_neg)
+print("sens of both together")
 print(sens)
 
 spec <- true_neg / (true_neg + false_pos)
+print("spec of both together")
 print(spec)
 
-false_pos <- sum(df6x$uniformity_test == "pass" & df6x$symm_test == "fail")
-true_pos <- sum(df6x$uniformity_test == "pass" & df6x$symm_test == "pass")
-false_neg <- sum(df6x$uniformity_test == "fail" & df6x$symm_test == "pass")
-true_neg <- sum(df6x$uniformity_test == "fail" & df6x$symm_test == "fail")
+# fail for inline only
+recent6x$symm_in_test <- "fail"
+recent6x$symm_in_test[recent6x$SymmInAT<2 & recent6x$SymmInAT>-2] <- "pass"
+
+false_pos <- sum(recent6x$uniformity_test == "pass" & recent6x$symm_in_test == "fail")
+true_pos <- sum(recent6x$uniformity_test == "pass" & recent6x$symm_in_test == "pass")
+false_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$symm_in_test == "pass")
+true_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$symm_in_test == "fail")
 
 sens <- true_pos / (true_pos + false_neg)
+print("sensitivty of symm inline")
 print(sens)
 
 spec <- true_neg / (true_neg + false_pos)
+print("specifity of symm inline")
 print(spec)
+
+# fail for crossline only
+recent6x$symm_cross_test <- "fail"
+recent6x$symm_cross_test[recent6x$SymmCrossAT<2 & recent6x$SymmCrossAT>-2] <- "pass"
+
+false_pos <- sum(recent6x$uniformity_test == "pass" & recent6x$symm_cross_test == "fail")
+true_pos <- sum(recent6x$uniformity_test == "pass" & recent6x$symm_cross_test == "pass")
+false_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$symm_cross_test == "pass")
+true_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$symm_cross_test == "fail")
+
+sens <- true_pos / (true_pos + false_neg)
+print("sensitivty of symm crossline")
+print(sens)
+
+spec <- true_neg / (true_neg + false_pos)
+print("specifity of symm crossline")
+print(spec)
+
 ```
+
+6x flatness spec and sens compared to uniformity
 ```{r}
-df6x$flat_test <- "fail"
-df6x$flat_test[df6x$FlatInAT<104 & df6x$FlatCrossAT<104] <- "pass"
 
 recent6x$flat_test <- "fail"
 recent6x$flat_test[recent6x$FlatInAT<104 & recent6x$FlatCrossAT<104] <- "pass"
@@ -311,23 +320,44 @@ print(sens)
 spec <- true_neg / (true_neg + false_pos)
 print(spec)
 
-false_pos <- sum(df6x$uniformity_test == "pass" & df6x$flat_test == "fail")
-true_pos <- sum(df6x$uniformity_test == "pass" & df6x$flat_test == "pass")
-false_neg <- sum(df6x$uniformity_test == "fail" & df6x$flat_test == "pass")
-true_neg <- sum(df6x$uniformity_test == "fail" & df6x$flat_test == "fail")
+# fail for inline only
+recent6x$flat_in_test <- "fail"
+recent6x$flat_in_test[recent6x$FlatInAT<104] <- "pass"
+
+false_pos <- sum(recent6x$uniformity_test == "pass" & recent6x$flat_in_test == "fail")
+true_pos <- sum(recent6x$uniformity_test == "pass" & recent6x$flat_in_test == "pass")
+false_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$flat_in_test == "pass")
+true_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$flat_in_test == "fail")
 
 sens <- true_pos / (true_pos + false_neg)
+print("sensitivty of flat inline")
 print(sens)
 
 spec <- true_neg / (true_neg + false_pos)
+print("specifity of flat inline")
 print(spec)
+
+# fail for crossline only
+recent6x$flat_cross_test <- "fail"
+recent6x$flat_cross_test[recent6x$FlatCrossAT<104] <- "pass"
+
+false_pos <- sum(recent6x$uniformity_test == "pass" & recent6x$flat_cross_test == "fail")
+true_pos <- sum(recent6x$uniformity_test == "pass" & recent6x$flat_cross_test == "pass")
+false_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$flat_cross_test == "pass")
+true_neg <- sum(recent6x$uniformity_test == "fail" & recent6x$flat_cross_test == "fail")
+
+sens <- true_pos / (true_pos + false_neg)
+print("sensitivty of flat crossline")
+print(sens)
+
+spec <- true_neg / (true_neg + false_pos)
+print("specifity of flat crossline")
+print(spec)
+
 ```
 
 Percentage difference of symmetry to uniformity
 ```{r}
-ratio <- df6x$SymmInAT / df6x$Uniformity
-mean(ratio)
-
 ratio <- recent6x$SymmInAT / recent6x$Uniformity
 mean(ratio)
 
@@ -336,86 +366,15 @@ mean(ratio)
 
 recent6x$AvSymm <- (recent6x$SymmInAT + recent6x$SymmCrossAT) / 2
 mean( recent6x$AvSymm / recent6x$Uniformity)
-
 ```
+
 Compare the symmetry in each direction to the uniformity
 ```{r}
-boxplot(df6x$SymmInAT, df6x$SymmCrossAT, df6x$Uniformity)
-boxplot(recent6x$SymmInAT, recent6x$SymmCrossAT, recent6x$Uniformity)
-boxplot(rand_df$SymmInAT, rand_df$SymmCrossAT, rand_df$Uniformity)
+boxplot(rand_6x$SymmInAT, rand_6x$SymmCrossAT, rand_6x$Uniformity)
+boxplot(rand_10x$SymmInAT, rand_10x$SymmCrossAT, rand_10x$Uniformity)
+boxplot(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT, rand_10fff$Uniformity)
 ```
 
-taking random sample from the recent df
-```{r}
-rand_recent6x <- recent6x[sample(nrow(recent6x), size=50), ]
-
-z.paired(rand_recent6x$SymmInAT, rand_recent6x$SymmCrossAT, 0, alpha = 0.05)
-boxplot(rand_recent6x$SymmInAT, rand_recent6x$SymmCrossAT, rand_recent6x$Uniformity)
-
-#z.paired(rand_recent6x$MPC_Distance, rand_recent6x$Calibrated_Distance, 0, alpha = 0.05)
-#boxplot(rand_recent6x$Calibrated_Distance, rand_recent6x$MPC_Distance)
-
-z.paired(rand_recent6x$FlatInAT, rand_recent6x$FlatCrossAT)
-boxplot(rand_recent6x$FlatInAT, rand_recent6x$FlatCrossAT)
-
-z.paired(rand_recent6x$SymmInBT, rand_recent6x$SymmInAT)
-z.paired(rand_recent6x$SymmCrossBT, rand_recent6x$SymmCrossAT)
-z.paired(rand_recent6x$FlatCrossBT, rand_recent6x$FlatCrossAT)
-z.paired(rand_recent6x$FlatInBT, rand_recent6x$FlatInAT)
-
-rand_recent6x$uniformity_test <- "fail"
-rand_recent6x$uniformity_test[rand_recent6x$Uniformity<2 & rand_recent6x$Uniformity>-2] <- "pass"
-
-rand_recent6x$symm_test <- "fail"
-rand_recent6x$symm_test[rand_recent6x$SymmInAT<2 & rand_recent6x$SymmInAT>-2 & rand_recent6x$SymmCrossAT<2 & rand_recent6x$SymmCrossAT>-2] <- "pass"
-
-false_pos <- sum(rand_recent6x$uniformity_test == "pass" & rand_recent6x$symm_test == "fail")
-true_pos <- sum(rand_recent6x$uniformity_test == "pass" & rand_recent6x$symm_test == "pass")
-false_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_test == "pass")
-true_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_test == "fail")
-
-sens <- true_pos / (true_pos + false_neg)
-print("sensitivy when taking the max symm")
-print(sens)
-
-spec <- true_neg / (true_neg + false_pos)
-print("specifity when taking the max symm")
-print(spec)
-
-rand_recent6x$symm_in_test <- "fail"
-rand_recent6x$symm_in_test[rand_recent6x$SymmInAT<2 & rand_recent6x$SymmInAT>-2] <- "pass"
-
-false_pos <- sum(rand_recent6x$uniformity_test == "pass" & rand_recent6x$symm_in_test == "fail")
-true_pos <- sum(rand_recent6x$uniformity_test == "pass" & rand_recent6x$symm_in_test == "pass")
-false_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_in_test == "pass")
-true_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_in_test == "fail")
-
-sens <- true_pos / (true_pos + false_neg)
-print("sensitivty of symm inline")
-print(sens)
-
-spec <- true_neg / (true_neg + false_pos)
-print("specifity of symm inline")
-print(spec)
-
-
-rand_recent6x$symm_cross_test <- "fail"
-rand_recent6x$symm_cross_test[rand_recent6x$SymmCrossAT<2 & rand_recent6x$SymmCrossAT>-2] <- "pass"
-
-false_pos <- sum(rand_recent6x$uniformity_test == "pass" & rand_recent6x$symm_cross_test == "fail")
-true_pos <- sum(rand_recent6x$uniformity_test == "pass" & rand_recent6x$symm_cross_test == "pass")
-false_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_cross_test == "pass")
-true_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_cross_test == "fail")
-
-sens <- true_pos / (true_pos + false_neg)
-print("sensitivty of symm crossline")
-print(sens)
-
-spec <- true_neg / (true_neg + false_pos)
-print("specifity of symm crossline")
-print(spec)
-
-```
 
 Is there a correlation between the symmetry and the uniformity?
 ```{r}
@@ -496,11 +455,6 @@ ggplot(recent10fff, aes(QA_Date)) +
 sensitivity and specificity of beam centre shift
 the MPC distance is always within 0.5mm threshold
 ```{r}
-df6x$centre_mpc_test <- "fail"
-df6x$centre_mpc_test[df6x$MPC_Distance<0.5 & df6x$MPC_Distance>-0.5] <- "pass"
-
-df6x$centre_cal_test <- "fail"
-df6x$centre_cal_test[df6x$Calibrated_Distance<0.5 & df6x$Calibrated_Distance>-0.5] <- "pass"
 
 recent6x$centre_mpc_test <- "fail"
 recent6x$centre_mpc_test[recent6x$MPC_Distance<0.5 & recent6x$MPC_Distance>-0.5] <- "pass"
@@ -518,18 +472,8 @@ print(sens)
 
 spec <- true_neg / (true_neg + false_pos)
 print(spec)
-
-false_pos <- sum(df6x$centre_mpc_test == "pass" & df6x$centre_cal_test == "fail")
-true_pos <- sum(df6x$centre_mpc_test == "pass" & df6x$centre_cal_test == "pass")
-false_neg <- sum(df6x$centre_mpc_test == "fail" & df6x$centre_cal_test == "pass")
-true_neg <- sum(df6x$centre_mpc_test == "fail" & df6x$centre_cal_test == "fail")
-
-sens <- true_pos / (true_pos + false_neg)
-print(sens)
-
-spec <- true_neg / (true_neg + false_pos)
-print(spec)
 ```
+
 
 plot the beam output change over time
 ```{r}
