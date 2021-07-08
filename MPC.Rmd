@@ -419,8 +419,33 @@ print(spec)
 
 Is there a correlation between the symmetry and the uniformity?
 ```{r}
-ggplot(recent6x, aes(SymmInAT)) +
-  geom_point(aes(y = SymmCrossAT), color = "yellow")
+
+fit3 <- lm(SymmInAT ~ poly(SymmCrossAT , 4, raw=TRUE), recent6x)  
+summary(fit3)
+
+cor.test(rand_recent6x$SymmCrossAT, rand_recent6x$SymmInAT)
+
+cor.test(rand_recent6x$Uniformity, rand_recent6x$SymmInAT)
+cor.test(rand_recent6x$Uniformity, rand_recent6x$SymmCrossAT)
+
+cor.test(rand_recent6x$FlatInAT, rand_recent6x$FlatCrossAT)
+cor.test(rand_recent6x$Uniformity, rand_recent6x$FlatCrossAT)
+cor.test(rand_recent6x$Uniformity, rand_recent6x$FlatInAT)
+
+ggplot(recent6x, aes(x = FlatInAT, y = FlatCrossAT)) +
+  geom_point(color = "blue") 
+
+ggplot(recent6x, aes(QA_Date)) +
+   geom_point(aes(y = Uniformity), color = "red") + 
+  geom_point(aes(y = FlatInAT-100), color = "blue") +
+  geom_point(aes(y = FlatCrossAT-100), color = "yellow")
+
+predicted_df <- data.frame(SymmInAT = predict(fit3, recent6x), SymmCrossAT = recent6x$SymmCrossAT)
+
+ggplot(recent6x, aes(x = SymmInAT, y = SymmCrossAT)) +
+  geom_point(color = "red") +
+  geom_line(color = "blue", data = predicted_df, aes(x = SymmInAT, y = SymmCrossAT)) 
+
 
 ggplot(recent6x, aes(Uniformity)) +
   geom_point(aes(y = SymmInAT), color = "blue") +
@@ -433,6 +458,7 @@ ggplot(recent6x, aes(QA_Date)) +
   geom_point(aes(y = Uniformity), color = "red") + 
   geom_point(aes(y = SymmInAT), color = "blue") +
   geom_point(aes(y = SymmCrossAT), color = "yellow")
+
 ```
 ```{r}
 ggplot(recent10x, aes(SymmInAT)) +
