@@ -64,6 +64,8 @@ z.test <- function(x, y){
 
 ```{r}
 z.paired <- function(x, y, d0, alpha){
+  if(missing(d0)){d0 <- 0}
+  if(missing(alpha)){alpha <- 0.05}
   mean_diff <- mean(x-y)
   sigma_diff <- sqrt(var(x)+var(y)-2*cov(x,y))
   n <- length(x)
@@ -242,6 +244,7 @@ z.paired(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance, 0.5, alpha = 0
 
 ```
 
+Comparing the symmetry and flatness to Uniformity
 
 Thresholds for passing the MPC tests are
 centre shift = 0.5
@@ -319,6 +322,68 @@ print(sens)
 spec <- true_neg / (true_neg + false_pos)
 print(spec)
 ```
+
+Percentage difference of symmetry to uniformity
+```{r}
+ratio <- df6x$SymmInAT / df6x$Uniformity
+mean(ratio)
+
+ratio <- recent6x$SymmInAT / recent6x$Uniformity
+mean(ratio)
+
+ratio <- recent6x$SymmCrossAT / recent6x$Uniformity
+mean(ratio)
+
+recent6x$AvSymm <- (recent6x$SymmInAT + recent6x$SymmCrossAT) / 2
+mean( recent6x$AvSymm / recent6x$Uniformity)
+
+```
+Compare the symmetry in each direction to the uniformity
+```{r}
+boxplot(df6x$SymmInAT, df6x$SymmCrossAT, df6x$Uniformity)
+boxplot(recent6x$SymmInAT, recent6x$SymmCrossAT, recent6x$Uniformity)
+boxplot(rand_df$SymmInAT, rand_df$SymmCrossAT, rand_df$Uniformity)
+```
+
+taking random sample from the recent df
+```{r}
+rand_recent6x <- recent6x[sample(nrow(recent6x), size=50), ]
+
+z.paired(rand_recent6x$SymmInAT, rand_recent6x$SymmCrossAT, 0, alpha = 0.05)
+boxplot(rand_recent6x$SymmInAT, rand_recent6x$SymmCrossAT, rand_recent6x$Uniformity)
+
+#z.paired(rand_recent6x$MPC_Distance, rand_recent6x$Calibrated_Distance, 0, alpha = 0.05)
+#boxplot(rand_recent6x$Calibrated_Distance, rand_recent6x$MPC_Distance)
+
+z.paired(rand_recent6x$FlatInAT, rand_recent6x$FlatCrossAT)
+boxplot(rand_recent6x$FlatInAT, rand_recent6x$FlatCrossAT)
+
+z.paired(rand_recent6x$SymmInBT, rand_recent6x$SymmInAT)
+z.paired(rand_recent6x$SymmCrossBT, rand_recent6x$SymmCrossAT)
+z.paired(rand_recent6x$FlatCrossBT, rand_recent6x$FlatCrossAT)
+z.paired(rand_recent6x$FlatInBT, rand_recent6x$FlatInAT)
+
+rand_recent6x$uniformity_test <- "fail"
+rand_recent6x$uniformity_test[rand_recent6x$Uniformity<2 & rand_recent6x$Uniformity>-2] <- "pass"
+
+rand_recent6x$symm_test <- "fail"
+rand_recent6x$symm_test[rand_recent6x$SymmInAT<2 & rand_recent6x$SymmInAT>-2 & rand_recent6x$SymmCrossAT<2 & rand_recent6x$SymmCrossAT>-2] <- "pass"
+
+false_pos <- sum(rand_recent6x$uniformity_test == "pass" & rand_recent6x$symm_test == "fail")
+true_pos <- sum(rand_recent6x$uniformity_test == "pass" & rand_recent6x$symm_test == "pass")
+false_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_test == "pass")
+true_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_test == "fail")
+
+sens <- true_pos / (true_pos + false_neg)
+print(sens)
+
+spec <- true_neg / (true_neg + false_pos)
+print(spec)
+
+```
+
+
+
 sensitivity and specificity of beam centre shift
 the MPC distance is always within 0.5mm threshold
 ```{r}
