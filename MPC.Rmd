@@ -375,14 +375,97 @@ false_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_te
 true_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_test == "fail")
 
 sens <- true_pos / (true_pos + false_neg)
+print("sensitivy when taking the max symm")
 print(sens)
 
 spec <- true_neg / (true_neg + false_pos)
+print("specifity when taking the max symm")
+print(spec)
+
+rand_recent6x$symm_in_test <- "fail"
+rand_recent6x$symm_in_test[rand_recent6x$SymmInAT<2 & rand_recent6x$SymmInAT>-2] <- "pass"
+
+false_pos <- sum(rand_recent6x$uniformity_test == "pass" & rand_recent6x$symm_in_test == "fail")
+true_pos <- sum(rand_recent6x$uniformity_test == "pass" & rand_recent6x$symm_in_test == "pass")
+false_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_in_test == "pass")
+true_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_in_test == "fail")
+
+sens <- true_pos / (true_pos + false_neg)
+print("sensitivty of symm inline")
+print(sens)
+
+spec <- true_neg / (true_neg + false_pos)
+print("specifity of symm inline")
+print(spec)
+
+
+rand_recent6x$symm_cross_test <- "fail"
+rand_recent6x$symm_cross_test[rand_recent6x$SymmCrossAT<2 & rand_recent6x$SymmCrossAT>-2] <- "pass"
+
+false_pos <- sum(rand_recent6x$uniformity_test == "pass" & rand_recent6x$symm_cross_test == "fail")
+true_pos <- sum(rand_recent6x$uniformity_test == "pass" & rand_recent6x$symm_cross_test == "pass")
+false_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_cross_test == "pass")
+true_neg <- sum(rand_recent6x$uniformity_test == "fail" & rand_recent6x$symm_cross_test == "fail")
+
+sens <- true_pos / (true_pos + false_neg)
+print("sensitivty of symm crossline")
+print(sens)
+
+spec <- true_neg / (true_neg + false_pos)
+print("specifity of symm crossline")
 print(spec)
 
 ```
 
+Is there a correlation between the symmetry and the uniformity?
+```{r}
+ggplot(recent6x, aes(SymmInAT)) +
+  geom_point(aes(y = SymmCrossAT), color = "yellow")
 
+ggplot(recent6x, aes(Uniformity)) +
+  geom_point(aes(y = SymmInAT), color = "blue") +
+  geom_point(aes(y = SymmCrossAT), color = "yellow")
+
+ggplot(recent6x, aes(Uniformity)) +
+  geom_point(aes(y = AvSymm), color = "blue")
+
+ggplot(recent6x, aes(QA_Date)) +
+  geom_point(aes(y = Uniformity), color = "red") + 
+  geom_point(aes(y = SymmInAT), color = "blue") +
+  geom_point(aes(y = SymmCrossAT), color = "yellow")
+```
+```{r}
+ggplot(recent10x, aes(SymmInAT)) +
+  geom_point(aes(y = SymmCrossAT), color = "yellow")
+
+ggplot(recent10x, aes(Uniformity)) +
+  geom_point(aes(y = SymmInAT), color = "blue") +
+  geom_point(aes(y = SymmCrossAT), color = "yellow")
+
+#ggplot(recent10x, aes(Uniformity)) +
+ # geom_point(aes(y = AvSymm), color = "blue")
+
+ggplot(recent10x, aes(QA_Date)) +
+  geom_point(aes(y = Uniformity), color = "red") + 
+  geom_point(aes(y = SymmInAT), color = "blue") +
+  geom_point(aes(y = SymmCrossAT), color = "yellow")
+```
+```{r}
+ggplot(recent10fff, aes(SymmInAT)) +
+  geom_point(aes(y = SymmCrossAT), color = "yellow")
+
+ggplot(recent10fff, aes(Uniformity)) +
+  geom_point(aes(y = SymmInAT), color = "blue") +
+  geom_point(aes(y = SymmCrossAT), color = "yellow")
+
+#ggplot(recent6x, aes(Uniformity)) +
+ # geom_point(aes(y = AvSymm), color = "blue")
+
+ggplot(recent10fff, aes(QA_Date)) +
+  geom_point(aes(y = Uniformity), color = "red") + 
+  geom_point(aes(y = SymmInAT), color = "blue") +
+  geom_point(aes(y = SymmCrossAT), color = "yellow")
+```
 
 sensitivity and specificity of beam centre shift
 the MPC distance is always within 0.5mm threshold
