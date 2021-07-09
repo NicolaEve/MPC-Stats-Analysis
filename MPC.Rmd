@@ -22,6 +22,7 @@ install packages and set libraries
 #install.packages("psych")
 #install.packages("distributions3")
 #install.packages("ggstatsplot")
+#install.packages("forecast")
 library(psych)
 library(qicharts2)
 library(ggplot2)
@@ -30,6 +31,7 @@ library(dplyr)
 library(odbc)
 library(distributions3)
 library(ggstatsplot)
+library(forecast)
 ```
 
 Define functions
@@ -164,6 +166,12 @@ print(ggplot(df, aes(Output_Change)) +
   xlab("Output Change") +
   ylab("Flatness") +
     labs(title = energy))
+
+print(ggplot(df, aes(x = MPC_Distance, y = Calibrated_Distance)) +
+        geom_point(color = "red") +
+        xlab("MPC Centre Shift") +
+        ylab("Calibrated Centre Shift") +
+        labs(title = energy))
 
 }
 ```
@@ -524,11 +532,7 @@ plot_cor(recent6x, energy = "6x")
 plot_cor(recent10x, energy = "10x")
 plot_cor(recent10fff, energy = "10FFF")
 ```
-Fit a regression model to describe the relationships
 
-```{r}
-#symm_fit <- lm()
-```
 
 ```{r}
 
@@ -544,26 +548,52 @@ ggplot(df6x, aes(QA_Date, Output_Change)) +
   ylab("Output Change") +
   ggtitle("Output Changes against Time")
 
-```
-polynomial regression model
+ggplot(recent6x, aes(x = QA_Date, y = SymmInAT)) +
+  geom_point() +
+  geom_smooth(method = 'loess') +
+  xlab("QA Date") +
+  ylab("symm") +
+  ggtitle("symm Changes against Time")
 
+ggplot(recent6x, aes(x = QA_Date, y = SymmCrossAT)) +
+  geom_point() +
+   geom_smooth(method = 'loess') +
+  xlab("QA Date") +
+  ylab("symm") +
+  ggtitle("symm Changes against Time")
+
+ggplot(recent6x, aes(x = QA_Date, y = FlatInAT)) +
+  geom_point() +
+   geom_smooth(method = 'loess') +
+  xlab("QA Date") +
+  ylab("symm") +
+  ggtitle("symm Changes against Time")
+
+ggplot(recent6x, aes(x = QA_Date, y = FlatCrossAT)) +
+  geom_point() +
+   geom_smooth(method = 'loess') +
+  xlab("QA Date") +
+  ylab("symm") +
+  ggtitle("symm Changes against Time")
+
+
+```
+Forecasting
 ```{r}
-df6x$index <- 1:length(df6x$Output_Change)
+# Fit and forecast with auto.arima()
+adenoTS = ts(recent6x)
+autoarima_fit = auto.arima(adenoTS[,1])
 
-fit3 <- lm(Output_Change ~ poly(index , 56, raw=TRUE), df6x)  
-fit4 <- lm(Output_Change ~ poly(index , 14, raw=TRUE), df6x)  ## quartic
-summary(fit3)
+#autoArimaFit <- auto.arima(recent6x)
+plot(forecast(autoarima_fit, h=20))
 
-plot(df6x$Output_Change, main="plot", xaxt="n")
-tck <- c(1, 50, 100, 150)
-axis(1, tck, labels=FALSE)
-mtext(df6x$QA_Date[tck], 1, 1, at=tck)
-lines(fit3$fitted.values, col=3, lwd=2)
-lines(fit4$fitted.values, col=2, lwd=2)
-legend("topleft", c("cubic", "quartic"), lwd=2, col=3:2)
+# Fit and forecast with Arima()
+arimaFit <- Arima(recent6x,order=c(3,1,0))
+plot(forecast(arimafit,h=20))
 ```
 
-Polynomial regression on this year
+
+Polynomial regression on this year for beam output change  -predicting this can help management by forecasting when it will need to be reset so we can plan around this.
 
 ```{r}
 recent6x$index <- 1:length(recent6x$Output_Change)
@@ -573,7 +603,7 @@ fit4 <- lm(Output_Change ~ poly(index , 14, raw=TRUE), recent6x)
 
 
 plot(recent6x$Output_Change, main="plot", xaxt="n")
-tck <- c(1, 50, 100, 150)
+tck <- c(1, 25, 50, 75)
 axis(1, tck, labels=FALSE)
 mtext(recent6x$QA_Date[tck], 1, 1, at=tck)
 lines(fit$fitted.values, col=3, lwd=2)
