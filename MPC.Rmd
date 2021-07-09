@@ -111,6 +111,46 @@ print(cor.test(df$Output_Change, df$FlatCrossAT))
 }
 ```
 
+```{r}
+plot_cor <- function(df){
+print(ggplot(df, aes(SymmInAT)) +
+  geom_point(aes(y = SymmCrossAT), color = "yellow") +
+    xlab("Symmetry Inline") + 
+    ylab("Symmetry Crossline"))
+
+print(ggplot(df, aes(Uniformity)) +
+  geom_point(aes(y = SymmInAT), color = "blue") +
+  geom_point(aes(y = SymmCrossAT), color = "yellow") +
+  xlab("Uniformity") +
+  ylab("Symmetry"))
+
+print(ggplot(df, aes(Output_Change)) +
+  geom_point(aes(y = SymmInAT), color = "blue") +
+  geom_point(aes(y = SymmCrossAT), color = "yellow") +
+  xlab("Output Change") + 
+  ylab("Symmetry"))
+
+print(ggplot(df, aes(FlatInAT)) +
+  geom_point(aes(y = FlatCrossAT), color = "yellow") +
+   xlab("Flatness Inline") + 
+  ylab("Flatness Crossline"))
+
+print(ggplot(df, aes(Uniformity)) +
+  geom_point(aes(y = FlatInAT), color = "blue") +
+  geom_point(aes(y = FlatCrossAT), color = "yellow") +
+  xlab("Uniformity") + 
+  ylab("Flatness"))
+
+print(ggplot(df, aes(Output_Change)) +
+  geom_point(aes(y = FlatInAT), color = "blue") +
+  geom_point(aes(y = FlatCrossAT), color = "yellow") + 
+  xlab("Output Change") +
+  ylab("Flatness"))
+
+}
+```
+
+
 Set up the database connection
 ```{r}
 con <- DBI::dbConnect(odbc::odbc(), 
@@ -427,6 +467,11 @@ fit3 <- lm(SymmInAT ~ poly(SymmCrossAT , 4, raw=TRUE), recent6x) # random sample
 summary(fit3)
 ```
 
+```{r}
+plot_cor(recent6x)
+plot_cor(recent10x)
+plot_cor(recent10fff)
+```
 
 ```{r}
 ggplot(recent10x, aes(SymmInAT)) +
@@ -436,27 +481,11 @@ ggplot(recent10x, aes(Uniformity)) +
   geom_point(aes(y = SymmInAT), color = "blue") +
   geom_point(aes(y = SymmCrossAT), color = "yellow")
 
-ggplot(recent10x, aes(Output_Change)) +
+ggplot(recent6x, aes(Output_Change)) +
   geom_point(aes(y = SymmInAT), color = "blue") +
   geom_point(aes(y = SymmCrossAT), color = "yellow")
 
 ggplot(recent10x, aes(QA_Date)) +
-  geom_point(aes(y = Uniformity), color = "red") + 
-  geom_point(aes(y = SymmInAT), color = "blue") +
-  geom_point(aes(y = SymmCrossAT), color = "yellow")
-```
-```{r}
-ggplot(recent10fff, aes(SymmInAT)) +
-  geom_point(aes(y = SymmCrossAT), color = "yellow")
-
-ggplot(recent10fff, aes(Uniformity)) +
-  geom_point(aes(y = SymmInAT), color = "blue") +
-  geom_point(aes(y = SymmCrossAT), color = "yellow")
-
-#ggplot(recent6x, aes(Uniformity)) +
- # geom_point(aes(y = AvSymm), color = "blue")
-
-ggplot(recent10fff, aes(QA_Date)) +
   geom_point(aes(y = Uniformity), color = "red") + 
   geom_point(aes(y = SymmInAT), color = "blue") +
   geom_point(aes(y = SymmCrossAT), color = "yellow")
