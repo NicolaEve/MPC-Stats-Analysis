@@ -23,6 +23,7 @@ install packages and set libraries
 #install.packages("distributions3")
 #install.packages("ggstatsplot")
 #install.packages("forecast")
+#install.packages("qcc")
 library(psych)
 library(qicharts2)
 library(ggplot2)
@@ -32,6 +33,7 @@ library(odbc)
 library(distributions3)
 library(ggstatsplot)
 library(forecast)
+library(qcc)
 ```
 
 Define functions
@@ -592,9 +594,12 @@ naive(dat_ts, h = 12)
 Forecasting
 ```{r}
 # Fit and forecast with auto.arima()
+# make it a time series 
+# frequency is the number of observations per cycle
 TS6x = ts(recent6x, frequency = 5)
 autoarima_fit = auto.arima(TS6x[,7]) # number specifies the data column
 
+# h is the number of points to predict ahead
 #autoArimaFit <- auto.arima(recent6x)
 plot(forecast(autoarima_fit, h=20))
 
@@ -626,13 +631,17 @@ legend("topleft", c("cubic", "quartic"), lwd=2, col=3:2)
 SPC charts for the beam centre shift over time;
 the flatness and symmetry over time
 ```{r}
+library(dplyr)
+#install.packages("lubridate")
+library(lubridate)
+recent6x$week <- week(recent6x$QA_Date) 
 
-qic(df10x$MPC_Distance, chart = 'i')
-qic(recent10x$Calibrated_Distance, chart = 'i')
-qic(df10x$MPC_Distance, chart = 'mr')
-qic(recent10x$Calibrated_Distance, chart = 'mr')
+SymmIn <- qcc.groups(recent6x$SymmInAT, recent6x$week)
+qcc(SymmIn, type = "R")
 
-qic(df6x$Output_Change, x = df6x$QA_Date, chart = 'xbar')
+qic(recent6x$Output_Change, x = recent6x$QA_Date, chart = 'xbar')
+
+qic(SymmInAT, x = QA_Date, data = recent6x, chart = 'xbar')
 
 qic(recent6x$SymmInAT, x = recent6x$QA_Date, chart = 'mr')
 
