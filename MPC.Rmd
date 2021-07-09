@@ -576,20 +576,31 @@ ggplot(recent6x, aes(x = QA_Date, y = FlatCrossAT)) +
   ylab("symm") +
   ggtitle("symm Changes against Time")
 
+n <-length(recent6x$SymmCrossAT)
+newdata <- 1:10*n
+recent6x$index <- 1:n
+loessmod <- loess(SymmCrossAT ~ index, data = recent6x)
+smoothed <- predict(loessmod, newdata = newdata)
+plot(x = recent6x$QA_Date, y = recent6x$SymmCrossAT)
+lines(smoothed, x = newdata)
+```
 
+```{r}
+dat_ts <- ts(recent6x, frequency = 5)
+naive(dat_ts, h = 12)
 ```
 Forecasting
 ```{r}
 # Fit and forecast with auto.arima()
-adenoTS = ts(recent6x)
-autoarima_fit = auto.arima(adenoTS[,1])
+TS6x = ts(recent6x, frequency = 5)
+autoarima_fit = auto.arima(TS6x[,7]) # number specifies the data column
 
 #autoArimaFit <- auto.arima(recent6x)
 plot(forecast(autoarima_fit, h=20))
 
 # Fit and forecast with Arima()
-arimaFit <- Arima(recent6x,order=c(3,1,0))
-plot(forecast(arimafit,h=20))
+#arimaFit <- Arima(recent6x,order=c(3,1,0))
+#plot(forecast(arimafit,h=20))
 ```
 
 
@@ -617,19 +628,16 @@ the flatness and symmetry over time
 ```{r}
 
 qic(df10x$MPC_Distance, chart = 'i')
-qic(df10x$Calibrated_Distance, chart = 'i')
+qic(recent10x$Calibrated_Distance, chart = 'i')
 qic(df10x$MPC_Distance, chart = 'mr')
-qic(df10x$Calibrated_Distance, chart = 'mr')
+qic(recent10x$Calibrated_Distance, chart = 'mr')
 
 qic(df6x$Output_Change, x = df6x$QA_Date, chart = 'xbar')
 
-qic(df6x$SymmInAT, chart = 'mr')
-
-```
-
-
-```{r}
 qic(recent6x$SymmInAT, x = recent6x$QA_Date, chart = 'mr')
+
 ```
+
+
 
 
