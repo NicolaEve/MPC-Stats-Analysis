@@ -24,6 +24,7 @@ install packages and set libraries
 #install.packages("ggstatsplot")
 #install.packages("forecast")
 #install.packages("qcc")
+#install.packages("lubridate")
 library(psych)
 library(qicharts2)
 library(ggplot2)
@@ -34,6 +35,7 @@ library(distributions3)
 library(ggstatsplot)
 library(forecast)
 library(qcc)
+library(lubridate)
 ```
 
 Define functions
@@ -119,6 +121,8 @@ print(cor.test(df$Output_Change, df$FlatCrossAT))
 
 ```{r}
 plot_cor <- function(df, energy){
+  
+  colours <- c("Inline" = "blue", "Crossline" = "yellow")
 print(ggplot(df, aes(x = SymmInAT, y = SymmCrossAT)) +
   geom_point(color = "red") +
     geom_smooth(method='loess') +
@@ -127,22 +131,24 @@ print(ggplot(df, aes(x = SymmInAT, y = SymmCrossAT)) +
     labs(title = energy))
 
 print(ggplot(df, aes(x = Uniformity)) +
-  geom_point(aes(y = SymmInAT), color = "blue") +
-  geom_point(aes(y = SymmCrossAT), color = "yellow") +
-  geom_smooth(aes(x = Uniformity, y = SymmInAT), method = 'loess', color = "blue") +
-  geom_smooth(aes(x = Uniformity, y = SymmCrossAT), method = 'loess', color = "yellow") +
+  geom_point(aes(y = SymmInAT, color = "Inline")) +
+  geom_point(aes(y = SymmCrossAT, color = "Crossline")) +
+  geom_smooth(aes(x = Uniformity, y = SymmInAT, color = "Inline"), method = 'loess') +
+  geom_smooth(aes(x = Uniformity, y = SymmCrossAT, color = "Crossline"), method = 'loess') +
   xlab("Uniformity") +
   ylab("Symmetry") +
-    labs(title = energy))
+    labs(title = energy, color = "legend") +
+      scale_color_manual(values = colours))
 
 print(ggplot(df, aes(Output_Change)) +
-  geom_point(aes(y = SymmInAT), color = "blue") +
-  geom_point(aes(y = SymmCrossAT), color = "yellow") +
-     geom_smooth(aes(x = Output_Change, y = SymmInAT), method = 'loess', color = "blue") +
-  geom_smooth(aes(x = Output_Change, y = SymmCrossAT), method = 'loess', color = "yellow") +
+  geom_point(aes(y = SymmInAT, color = "Inline")) +
+  geom_point(aes(y = SymmCrossAT, color = "Crossline")) +
+     geom_smooth(aes(x = Output_Change, y = SymmInAT, color = "Inline"), method = 'loess') +
+  geom_smooth(aes(x = Output_Change, y = SymmCrossAT, color = "Crossline"), method = 'loess') +
   xlab("Output Change") + 
   ylab("Symmetry") +
-    labs(title = energy))
+    labs(title = energy, color = "legend")+
+    scale_color_manual(values = colours))
 
 print(ggplot(df, aes(x = FlatInAT, y = FlatCrossAT)) +
   geom_point(color = "red") +
@@ -152,22 +158,24 @@ print(ggplot(df, aes(x = FlatInAT, y = FlatCrossAT)) +
     labs(title = energy))
 
 print(ggplot(df, aes(Uniformity)) +
-  geom_point(aes(y = FlatInAT), color = "blue") +
-  geom_point(aes(y = FlatCrossAT), color = "yellow") +
-     geom_smooth(aes(x = Uniformity, y = FlatInAT), method = 'loess', color = "blue") +
-  geom_smooth(aes(x = Uniformity, y = FlatCrossAT), method = 'loess', color = "yellow") +
+  geom_point(aes(y = FlatInAT, color = "Inline")) +
+  geom_point(aes(y = FlatCrossAT, color = "Crossline")) +
+     geom_smooth(aes(x = Uniformity, y = FlatInAT, color = "Inline"), method = 'loess') +
+  geom_smooth(aes(x = Uniformity, y = FlatCrossAT, color = "Crossline"), method = 'loess') +
   xlab("Uniformity") + 
   ylab("Flatness") +
-    labs(title = energy))
+    labs(title = energy, color = "legend") +
+    scale_color_manual(values = colours))
 
 print(ggplot(df, aes(Output_Change)) +
-  geom_point(aes(y = FlatInAT), color = "blue") +
-  geom_point(aes(y = FlatCrossAT), color = "yellow") + 
-  geom_smooth(aes(x = Output_Change, y = FlatInAT), method = 'loess', color = "blue") +
-  geom_smooth(aes(x = Output_Change, y = FlatCrossAT), method = 'loess', color = "yellow") +
+  geom_point(aes(y = FlatInAT, color = "Inline")) +
+  geom_point(aes(y = FlatCrossAT, color = "Crossline")) + 
+  geom_smooth(aes(x = Output_Change, y = FlatInAT, color = "Inline"), method = 'loess') +
+  geom_smooth(aes(x = Output_Change, y = FlatCrossAT, color = "Crossline"), method = 'loess') +
   xlab("Output Change") +
   ylab("Flatness") +
-    labs(title = energy))
+    labs(title = energy,  color = "legend") +
+    scale_color_manual(values = colours))
 
 print(ggplot(df, aes(x = MPC_Distance, y = Calibrated_Distance)) +
         geom_point(color = "red") +
@@ -351,6 +359,8 @@ boxplot(recent10fff$FlatCrossBT, recent10fff$FlatInBT)
 is.numeric(recent10fff$SymmInAT)
 sapply(recent10fff, class)
 
+quantile(as.vector(recent10fff$SymmCrossAT))
+
 q <- as.numeric(recent10fff$SymmInAT)
 sapply(q,class)
 quantile(q)
@@ -480,7 +490,6 @@ z.paired(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance, 0.5, alpha = 0
 ```
 
 
-
 Sensitivty and Specificty
 
 ```{r}
@@ -587,10 +596,7 @@ plot(x = recent6x$QA_Date, y = recent6x$SymmCrossAT)
 lines(smoothed, x = newdata)
 ```
 
-```{r}
-dat_ts <- ts(recent6x, frequency = 5)
-naive(dat_ts, h = 12)
-```
+
 Forecasting
 ```{r}
 # Fit and forecast with auto.arima()
@@ -630,23 +636,64 @@ legend("topleft", c("cubic", "quartic"), lwd=2, col=3:2)
 
 SPC charts for the beam centre shift over time;
 the flatness and symmetry over time
-```{r}
-library(dplyr)
-#install.packages("lubridate")
-library(lubridate)
-recent6x$week <- week(recent6x$QA_Date) 
 
-SymmIn <- qcc.groups(recent6x$SymmInAT, recent6x$week)
-qcc(SymmIn, type = "R")
+6x
+```{r}
 
 qic(recent6x$Output_Change, x = recent6x$QA_Date, chart = 'xbar')
-
 qic(SymmInAT, x = QA_Date, data = recent6x, chart = 'xbar')
-
 qic(recent6x$SymmInAT, x = recent6x$QA_Date, chart = 'mr')
 
 ```
 
+Set up the data as grouped by week
+```{r}
+# grouped by week
+# numbered from start of the year
+recent6x$week <- week(recent6x$QA_Date) 
+recent10x$week <- week(recent10x$QA_Date) 
+recent10fff$week <- week(recent10fff$QA_Date) 
+```
 
+Function to plot the spc charts
+```{r}
+
+plot_spc <- function(df){
+
+SymmIn <- qcc.groups(df$SymmInAT, df$week)
+qcc(SymmIn, type = "R")
+qcc(SymmIn, type = "xbar")
+
+SymmCross <- qcc.groups(df$SymmCrossAT, df$week)
+qcc(SymmCross, type = "R")
+qcc(SymmCross, type = "xbar")
+
+FlatIn <- qcc.groups(df$FlatInAT, df$week)
+qcc(FlatIn, type = "R")
+qcc(FlatIn, type = "xbar")
+
+FlatCross <- qcc.groups(df$FlatCrossAT, df$week)
+qcc(FlatCross, type = "R")
+qcc(FlatCross, type = "xbar")
+
+Uniformity <- qcc.groups(df$Uniformity, df$week)
+qcc(Uniformity, type = "R")
+qcc(Uniformity, type = "xbar")
+
+OutputChange <- qcc.groups(df$Output_Change, df$week)
+qcc(OutputChange, type = "R")
+qcc(OutputChange, type = "xbar")
+qcc(OutputChange, type = "S")
+
+}
+
+```
+
+plot for each energy
+```{r}
+plot_spc(recent6x)
+plot_spc(recent10x)
+plot_spc(recent10fff)
+```
 
 
