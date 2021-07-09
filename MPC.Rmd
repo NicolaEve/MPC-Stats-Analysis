@@ -115,15 +115,18 @@ print(cor.test(df$Output_Change, df$FlatCrossAT))
 
 ```{r}
 plot_cor <- function(df, energy){
-print(ggplot(df, aes(SymmInAT)) +
-  geom_point(aes(y = SymmCrossAT), color = "yellow") +
+print(ggplot(df, aes(x = SymmInAT, y = SymmCrossAT)) +
+  geom_point(color = "red") +
+    geom_smooth(method='loess') +
     xlab("Symmetry Inline") + 
     ylab("Symmetry Crossline") + 
     labs(title = energy))
 
-print(ggplot(df, aes(Uniformity)) +
+print(ggplot(df, aes(x = Uniformity)) +
   geom_point(aes(y = SymmInAT), color = "blue") +
   geom_point(aes(y = SymmCrossAT), color = "yellow") +
+  geom_smooth(aes(x = Uniformity, y = SymmInAT), method = 'loess', color = "blue") +
+  geom_smooth(aes(x = Uniformity, y = SymmCrossAT), method = 'loess', color = "yellow") +
   xlab("Uniformity") +
   ylab("Symmetry") +
     labs(title = energy))
@@ -131,12 +134,15 @@ print(ggplot(df, aes(Uniformity)) +
 print(ggplot(df, aes(Output_Change)) +
   geom_point(aes(y = SymmInAT), color = "blue") +
   geom_point(aes(y = SymmCrossAT), color = "yellow") +
+     geom_smooth(aes(x = Output_Change, y = SymmInAT), method = 'loess', color = "blue") +
+  geom_smooth(aes(x = Output_Change, y = SymmCrossAT), method = 'loess', color = "yellow") +
   xlab("Output Change") + 
   ylab("Symmetry") +
     labs(title = energy))
 
-print(ggplot(df, aes(FlatInAT)) +
-  geom_point(aes(y = FlatCrossAT), color = "yellow") +
+print(ggplot(df, aes(x = FlatInAT, y = FlatCrossAT)) +
+  geom_point(color = "red") +
+    geom_smooth(method='loess') +
    xlab("Flatness Inline") + 
   ylab("Flatness Crossline") +
     labs(title = energy))
@@ -144,6 +150,8 @@ print(ggplot(df, aes(FlatInAT)) +
 print(ggplot(df, aes(Uniformity)) +
   geom_point(aes(y = FlatInAT), color = "blue") +
   geom_point(aes(y = FlatCrossAT), color = "yellow") +
+     geom_smooth(aes(x = Uniformity, y = FlatInAT), method = 'loess', color = "blue") +
+  geom_smooth(aes(x = Uniformity, y = FlatCrossAT), method = 'loess', color = "yellow") +
   xlab("Uniformity") + 
   ylab("Flatness") +
     labs(title = energy))
@@ -151,6 +159,8 @@ print(ggplot(df, aes(Uniformity)) +
 print(ggplot(df, aes(Output_Change)) +
   geom_point(aes(y = FlatInAT), color = "blue") +
   geom_point(aes(y = FlatCrossAT), color = "yellow") + 
+  geom_smooth(aes(x = Output_Change, y = FlatInAT), method = 'loess', color = "blue") +
+  geom_smooth(aes(x = Output_Change, y = FlatCrossAT), method = 'loess', color = "yellow") +
   xlab("Output Change") +
   ylab("Flatness") +
     labs(title = energy))
@@ -515,6 +525,11 @@ plot_cor(recent10x, energy = "10x")
 plot_cor(recent10fff, energy = "10FFF")
 ```
 Fit a regression model to describe the relationships
+
+```{r}
+#symm_fit <- lm()
+```
+
 ```{r}
 
 fit3 <- lm(SymmInAT ~ poly(SymmCrossAT , 4, raw=TRUE), recent6x) # random sample of whole dataset? 
@@ -555,7 +570,7 @@ recent6x$index <- 1:length(recent6x$Output_Change)
 
 fit <- lm(Output_Change ~ poly(index , 56, raw=TRUE), recent6x)  
 fit4 <- lm(Output_Change ~ poly(index , 14, raw=TRUE), recent6x)
-summary(fit3)
+
 
 plot(recent6x$Output_Change, main="plot", xaxt="n")
 tck <- c(1, 50, 100, 150)
