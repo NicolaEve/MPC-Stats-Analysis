@@ -70,13 +70,46 @@ z.paired <- function(x, y, d0, alpha){
   
   if(z < qnorm(alpha/2)) {cat("Null hypothesis can be rejected. Evidence the difference in means is not equal to", d0)}
   if (z > qnorm(1 - (alpha/2))) {
-  print("Null hypothesis can be rejected. Evidence the difference in means is not equal to", d0)}
+  cat("Null hypothesis can be rejected. Evidence the difference in means is not equal to", d0)}
   if ( qnorm(alpha/2)< z & z < qnorm(1- (alpha/2))) {  cat("Null hypothesis can not be rejected, evidence the difference in means is equal to", d0)}
   
   return(c(z, p_value))
 }
 ```
 
+```{r}
+Symm_Flat_Rel <- function(df){
+  print("Symmetry Crossline and Inline")
+print(cor.test(df$SymmCrossAT, df$SymmInAT))
+
+print("Uniformity and Inline Symmetry")
+print(cor.test(df$Uniformity, df$SymmInAT))
+
+print("Uniformity and Crossline Symmetry")
+print(cor.test(df$Uniformity, df$SymmCrossAT))
+
+print("Flatness Crossline and Inline")
+print(cor.test(df$FlatInAT, df$FlatCrossAT))
+
+print("Uniformity and Inline Flatness")
+print(cor.test(df$Uniformity, df$FlatInAT))
+
+print("Uniformity and Crossline Flatness")
+print(cor.test(df$Uniformity, df$FlatCrossAT))
+
+print("Output change and symmetry inline")
+print(cor.test(df$Output_Change, df$SymmInAT))
+
+print("Output change and symmetry crossline")
+print(cor.test(df$Output_Change, df$SymmCrossAT))
+
+print("Output change and flatness inline")
+print(cor.test(df$Output_Change, df$FlatInAT))
+
+print("Output change and flatness crossline")
+print(cor.test(df$Output_Change, df$FlatCrossAT))
+}
+```
 
 Set up the database connection
 ```{r}
@@ -376,49 +409,25 @@ boxplot(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT, rand_10fff$Uniformity)
 ```
 
 
-Is there a correlation between the symmetry and the uniformity?
+Are there a correlations between symmetry, flatness and uniformity, output change?
+
+```{r}
+Symm_Flat_Rel(recent6x)
+```
+```{r}
+Symm_Flat_Rel(recent10x)
+```
+```{r}
+Symm_Flat_Rel(recent10fff)
+```
+
 ```{r}
 
 fit3 <- lm(SymmInAT ~ poly(SymmCrossAT , 4, raw=TRUE), recent6x) # random sample of whole dataset? 
 summary(fit3)
-
-cor.test(rand_6x$SymmCrossAT, rand_6x$SymmInAT)
-
-cor.test(rand_6x$Uniformity, rand_6x$SymmInAT)
-cor.test(rand_6x$Uniformity, rand_6x$SymmCrossAT)
-
-cor.test(rand_6x$FlatInAT, rand_6x$FlatCrossAT)
-cor.test(rand_6x$Uniformity, rand_6x$FlatCrossAT)
-cor.test(rand_6x$Uniformity, rand_6x$FlatInAT)
-
-ggplot(rand_6x, aes(x = FlatInAT, y = FlatCrossAT)) +
-  geom_point(color = "blue") 
-
-ggplot(rand_6x, aes(QA_Date)) +
-   geom_point(aes(y = Uniformity), color = "red") + 
-  geom_point(aes(y = FlatInAT-100), color = "blue") +
-  geom_point(aes(y = FlatCrossAT-100), color = "yellow")
-
-predicted_df <- data.frame(SymmInAT = predict(fit3, recent6x), SymmCrossAT = recent6x$SymmCrossAT)
-
-ggplot(recent6x, aes(x = SymmInAT, y = SymmCrossAT)) +
-  geom_point(color = "red") +
-  geom_line(color = "blue", data = predicted_df, aes(x = SymmInAT, y = SymmCrossAT)) 
-
-
-ggplot(recent6x, aes(Uniformity)) +
-  geom_point(aes(y = SymmInAT), color = "blue") +
-  geom_point(aes(y = SymmCrossAT), color = "yellow")
-
-ggplot(recent6x, aes(Uniformity)) +
-  geom_point(aes(y = AvSymm), color = "blue")
-
-ggplot(recent6x, aes(QA_Date)) +
-  geom_point(aes(y = Uniformity), color = "red") + 
-  geom_point(aes(y = SymmInAT), color = "blue") +
-  geom_point(aes(y = SymmCrossAT), color = "yellow")
-
 ```
+
+
 ```{r}
 ggplot(recent10x, aes(SymmInAT)) +
   geom_point(aes(y = SymmCrossAT), color = "yellow")
@@ -427,8 +436,9 @@ ggplot(recent10x, aes(Uniformity)) +
   geom_point(aes(y = SymmInAT), color = "blue") +
   geom_point(aes(y = SymmCrossAT), color = "yellow")
 
-#ggplot(recent10x, aes(Uniformity)) +
- # geom_point(aes(y = AvSymm), color = "blue")
+ggplot(recent10x, aes(Output_Change)) +
+  geom_point(aes(y = SymmInAT), color = "blue") +
+  geom_point(aes(y = SymmCrossAT), color = "yellow")
 
 ggplot(recent10x, aes(QA_Date)) +
   geom_point(aes(y = Uniformity), color = "red") + 
