@@ -186,6 +186,8 @@ print(ggplot(df, aes(x = MPC_Distance, y = Calibrated_Distance)) +
 }
 ```
 
+sensitvity and specificty functions
+
 ```{r}
 sens_spec <- function(var1, var2){
 
@@ -200,8 +202,85 @@ cat("   Sensitivity is ", sens)
 spec <- true_neg / (true_neg + false_pos)
 cat("  Specificity is ", spec)
 }
+
+calc_sens_spec <- function(df){
+
+  # symmetry against uniformity
+  print(" Uniformity vs Combined Symmetry ")
+  sens_spec(df$uniformity_test, df$symm_test)
+  print(" Uniformity vs symmetry inline ")
+  sens_spec(df$uniformity_test, df$symm_in_test)
+  print("Uniformity vs symmetry crossline ")
+  sens_spec(df$uniformity_test, df$symm_cross_test)
+  
+  # symmetry against beam output change
+  print("Beam output vs symmetry")
+  sens_spec(df$output_test, df$symm_test)
+  print("Beam output vs symmetry inline")
+  sens_spec(df$output_test, df$symm_in_test)
+  print("Beam output vs symmetry crossline")
+  sens_spec(df$output_test, df$symm_cross_test)
+  
+  # centre shift distance
+  print("Beam centre shift: MPC vs calibrated")
+  sens_spec(df$centre_mpc_test, df$centre_cal_test)
+  
+   # flatness against uniformity
+  print(" Uniformity vs Combined Symmetry ")
+  sens_spec(df$uniformity_test, df$flat_test)
+  print(" Uniformity vs flatness inline ")
+  sens_spec(df$uniformity_test, df$flat_in_test)
+  print("Uniformity vs flatness crossline ")
+  sens_spec(df$uniformity_test, df$flat_cross_test)
+  
+  # flatness against beam output change
+  print("Beam output vs flatness")
+  sens_spec(df$output_test, df$flat_test)
+  print("Beam output vs flatness inline")
+  sens_spec(df$output_test, df$flat_in_test)
+  print("Beam output vs flatness crossline")
+  sens_spec(df$output_test, df$flat_cross_test)
+  
+  
+}
+
 ```
 
+max difference function
+```{r}
+
+difference <- function(df){
+  
+  # uniformity
+cat(" Max difference symmetry inline and uniformity is ", max( abs(df$SymmInAT - df$Uniformity)))
+  
+  cat(" Max differencesymmetry crossline and uniformity is ", max( abs(df$SymmCrossAT - df$Uniformity)))
+  
+  cat(" Max difference flatneess inline and uniformity is ", max( abs( (df$FlatInAT-100) - df$Uniformity)))
+  
+  cat(" Max difference flatness crossline and uniformity is ", max( abs( (df$FlatCrossAT-100) - df$Uniformity)))
+  
+  
+  
+  # output change
+  cat(" Max difference symmetry inline and output change is ", max( abs(df$SymmInAT - df$Output_Change)))
+  
+  cat(" Max difference symmetry crossline and output change is ", max( abs(df$SymmCrossAT - df$Output_Change)))
+  
+  cat(" Max difference flatness inline and output change is ", max( abs( (df$FlatInAT-100) - df$Output_Change)))
+  
+  cat(" Max difference flatness crossline and output change is ", max( abs( (df$FlatCrossAT-100) - df$Output_Change)))
+  
+  
+  
+  # beam centre shift
+  cat(" Max difference beam centre shift is ", max( abs(df$MPC_Distance - df$Calibrated_Distance)))
+
+  
+}
+
+
+```
 Function to add pass/fail columns to the dataframes
 
 ```{r}
@@ -476,67 +555,30 @@ z.paired(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance, 0.5, alpha = 0
 ```
 
 
-Sensitivity and Specificty
+Sensitivity and Specificity
+
+```{r}
+sum(df10fff$MPC_Distance > 0.5) + sum(df10fff$MPC_Distance < - 0.5)
+```
 
 add pass/fail columns to the dataframe
 ```{r}
-
 recent6x <- add_cols(recent6x)
 recent10x <- add_cols(recent10x)
 recent10fff <- add_cols(recent10fff)
 
+# how does it compare to the whole df
+# there's so few failures that it might not be representative to take only the msot recent df
+sum(recent10fff$uniformity_test == "fail")
+(sum(df10fff$Uniformity > 2) + sum(df10fff$Uniformity < -2))/sum(df10fff$Uniformity)
 
 ```
 
-6x
+6x 
 
 ```{r}
-
-calc_sens_spec <- function(df){
-
-  # symmetry against uniformity
-  print(" Uniformity vs Combined Symmetry ")
-  sens_spec(df$uniformity_test, df$symm_test)
-  print(" Uniformity vs symmetry inline ")
-  sens_spec(df$uniformity_test, df$symm_in_test)
-  print("Uniformity vs symmetry crossline ")
-  sens_spec(df$uniformity_test, df$symm_cross_test)
-  
-  # symmetry against beam output change
-  print("Beam output vs symmetry")
-  sens_spec(df$output_test, df$symm_test)
-  print("Beam output vs symmetry inline")
-  sens_spec(df$output_test, df$symm_in_test)
-  print("Beam output vs symmetry crossline")
-  sens_spec(df$output_test, df$symm_cross_test)
-  
-  # centre shift distance
-  print("Beam centre shift: MPC vs calibrated")
-  sens_spec(df$centre_mpc_test, df$centre_cal_test)
-  
-   # flatness against uniformity
-  print(" Uniformity vs Combined Symmetry ")
-  sens_spec(df$uniformity_test, df$flat_test)
-  print(" Uniformity vs flatness inline ")
-  sens_spec(df$uniformity_test, df$flat_in_test)
-  print("Uniformity vs flatness crossline ")
-  sens_spec(df$uniformity_test, df$flat_cross_test)
-  
-  # flatness against beam output change
-  print("Beam output vs flatness")
-  sens_spec(df$output_test, df$flat_test)
-  print("Beam output vs flatness inline")
-  sens_spec(df$output_test, df$flat_in_test)
-  print("Beam output vs flatness crossline")
-  sens_spec(df$output_test, df$flat_cross_test)
-  
-  
-}
-
 calc_sens_spec(recent6x)
-
 ```
-
 10x
 
 ```{r}
@@ -549,29 +591,25 @@ calc_sens_spec(recent10fff)
 ```
 
 
-Percentage difference of symmetry to uniformity
+Difference between symmetry and uniformity
+Compare how much difference there is overall - e.g. all symmetry values are within x% of uniformity
+
+
+6x
 ```{r}
-ratio1 <- recent6x$SymmInAT / recent6x$Uniformity
-mean(ratio1)
+difference(recent6x)
 
-ratio <- recent6x$SymmCrossAT / recent6x$Uniformity
-mean(ratio)
-
-recent6x$AvSymm <- (recent6x$SymmInAT + recent6x$SymmCrossAT) / 2
-mean( recent6x$AvSymm / recent6x$Uniformity)
-
-ggplot(data = recent6x, aes(x = QA_Date, y = ratio)) +
-  geom_point()
-
-ggplot(data = recent6x, aes(x = QA_Date, y = ratio1)) +
-  geom_point()
 ```
 
-Compare the symmetry in each direction to the uniformity
+10x
+````{r}
+difference(recent10x)
+
+```
+
+10fff
 ```{r}
-boxplot(rand_6x$SymmInAT, rand_6x$SymmCrossAT, rand_6x$Uniformity)
-boxplot(rand_10x$SymmInAT, rand_10x$SymmCrossAT, rand_10x$Uniformity)
-boxplot(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT, rand_10fff$Uniformity)
+difference(recent10fff)
 ```
 
 
@@ -594,48 +632,81 @@ plot_cor(recent10x, energy = "10x")
 plot_cor(recent10fff, energy = "10FFF")
 ```
 
-
+Plot the flatness and symmetry against time
 ```{r}
+plot_time <- function(df, energy){
+  colours <- c("Inline" = "blue", "Crossline" = "yellow")
+  
+print(ggplot(df, aes(x = QA_Date)) +
+  geom_point(aes(y = FlatInAT, color = "Inline")) + 
+  geom_point(aes(y = FlatCrossAT, color = "Crossline")) +
+  geom_smooth(aes(x = QA_Date, y = FlatInAT, color = "Inline"), method = 'loess') +
+   geom_smooth(aes(x = QA_Date, y = FlatCrossAT, color = "Crossline"), method = 'loess') +
+  labs(title = paste("Flatness", energy)))
 
-fit3 <- lm(SymmInAT ~ poly(SymmCrossAT , 4, raw=TRUE), recent6x) # random sample of whole dataset? 
-summary(fit3)
+
+print(ggplot(df, aes(x = QA_Date)) +
+  geom_point(aes(y = SymmInAT, color = "Inline")) +
+  geom_point(aes(y = SymmCrossAT, color = "Crossline")) +
+    geom_smooth(aes(x = QA_Date, y = SymmInAT, color = "Inline"), method = 'loess') +
+   geom_smooth(aes(x = QA_Date, y = SymmCrossAT, color = "Crossline"), method = 'loess') +
+  labs(title = paste("Symmetry", energy)))
+}
+
+plot_time(recent6x, "6x")
+plot_time(recent10x, "10x")
+plot_time(recent10fff, "10xFFF")
 ```
 
-plot the beam output change over time
+
+plot the beam output change, uniformity and centre shift over time
 ```{r}
-ggplot(df6x, aes(QA_Date, Output_Change)) +
+
+plot_mpc_time <- function(df, energy){
+  
+  print(ggplot(df, aes(QA_Date, Output_Change)) +
   geom_point() +
+    geom_smooth(aes(x = QA_Date, y = Output_Change), method = "loess") +
   xlab("QA Date") +
   ylab("Output Change") +
-  ggtitle("Output Changes against Time")
-
-ggplot(recent6x, aes(x = QA_Date, y = SymmInAT)) +
+  ggtitle(paste("Output Changes against Time", energy)))
+  
+    print(ggplot(df, aes(QA_Date, Uniformity)) +
   geom_point() +
-  geom_smooth(method = 'loess') +
+    geom_smooth(aes(x = QA_Date, y = Uniformity), method = "loess") +
   xlab("QA Date") +
-  ylab("symm") +
-  ggtitle("symm Changes against Time")
-
-ggplot(recent6x, aes(x = QA_Date, y = SymmCrossAT)) +
+  ylab("Uniformity") +
+  ggtitle(paste("Uniformity against Time", energy)))
+    
+    print(ggplot(df, aes(QA_Date, MPC_Distance)) +
   geom_point() +
-   geom_smooth(method = 'loess') +
+    geom_smooth(aes(x = QA_Date, y = MPC_Distance), method = "loess") +
   xlab("QA Date") +
-  ylab("symm") +
-  ggtitle("symm Changes against Time")
+  ylab("Beam Centre Shift (mm)") +
+  ggtitle(paste("Centre shift against Time", energy)))
 
-ggplot(recent6x, aes(x = QA_Date, y = FlatInAT)) +
-  geom_point() +
-   geom_smooth(method = 'loess') +
-  xlab("QA Date") +
-  ylab("symm") +
-  ggtitle("symm Changes against Time")
 
-ggplot(recent6x, aes(x = QA_Date, y = FlatCrossAT)) +
-  geom_point() +
-   geom_smooth(method = 'loess') +
+}
+
+plot_mpc_time(df6x, "6x")
+```
+
+```{r}
+plot_centre_shift <- function(df, energy){
+  colors <- c("MPC" = "blue", "Calibrated" = "red")
+  
+    print(ggplot(df, aes(x = QA_Date)) +
+  geom_point(aes(y = MPC_Distance, color = "MPC")) +
+    geom_point(aes(y = Calibrated_Distance, color = "Calibrated")) +
+    geom_smooth(aes(x = QA_Date, y = MPC_Distance, color = "MPC"), method = "loess") +
+    geom_smooth(aes(x = QA_Date, y = Calibrated_Distance, color = "Calibrated"), method = "loess") +
   xlab("QA Date") +
-  ylab("symm") +
-  ggtitle("symm Changes against Time")
+  ylab("Beam Centre Shift (mm)") +
+  ggtitle(paste("Centre shift against Time", energy)))
+}
+
+plot_centre_shift(recent6x, "6x")
+
 ```
 
 
