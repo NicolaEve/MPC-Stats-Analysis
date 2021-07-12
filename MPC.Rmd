@@ -202,6 +202,71 @@ cat("  Specificity is ", spec)
 }
 ```
 
+Function to add pass/fail columns to the dataframes
+
+```{r}
+add_cols <- function(df){
+  
+  symmetry_threshold <- 2
+  flat_threshold <- 103
+  distance_threshold <- 0.5
+  
+  # set the mpc thresholds
+  centre_threshold <- 0.5
+  uniformity_threshold <- 2
+  output_threshold <- 2
+  
+  f <- `$<-`
+  
+  # uniformity
+  df <- f(df, "uniformity_test", "fail")
+  df$uniformity_test[df$Uniformity<uniformity_threshold & df$Uniformity>-uniformity_threshold] <- "pass"
+  
+    
+  # combined symmetry
+  # fail if 1 of them fails
+  df<- f(df, "symm_test", "fail")
+  df$symm_test[df$SymmInAT<symmetry_threshold & df$SymmInAT>-symmetry_threshold & df$SymmCrossAT<symmetry_threshold & df$SymmCrossAT>-symmetry_threshold] <- "pass"
+  
+   # fail for inline only
+  df <- f(df, "symm_in_test", "fail")
+  df$symm_in_test[df$SymmInAT<symmetry_threshold & df$SymmInAT>-symmetry_threshold] <- "pass"
+  
+    # fail for crossline only
+  df <- f(df, "symm_cross_test", "fail")
+  df$symm_cross_test[df$SymmCrossAT<symmetry_threshold & df$SymmCrossAT>-symmetry_threshold] <- "pass"
+  
+  
+  
+  # flatness
+  # fail if 1 of them fails
+  df<- f(df, "flat_test", "fail")
+  df$flat_test[df$FlatInAT<flat_threshold & df$FlatInAT>-flat_threshold & df$FlatCrossAT<flat_threshold & df$FlatCrossAT>-flat_threshold] <- "pass"
+  
+   # fail for inline only
+  df <- f(df, "flat_in_test", "fail")
+  df$flat_in_test[df$FlatInAT<flat_threshold & df$FlatInAT>-flat_threshold] <- "pass"
+  
+    # fail for crossline only
+  df <- f(df, "flat_cross_test", "fail")
+  df$flat_cross_test[df$FlatCrossAT<flat_threshold & df$FlatCrossAT>-flat_threshold] <- "pass"
+  
+  
+    # output change
+  df <- f(df, "output_test", "fail")
+  df$output_test[df$Output_Change<output_threshold & df$output_test>-output_threshold] <- "pass"
+  
+  # centre shift
+  df <- f(df, "centre_mpc_test", "fail")
+  df$centre_mpc_test[df$MPC_Distance<distance_threshold & df$MPC_Distance>-distance_threshold] <- "pass"
+  
+  df <- f(df, "centre_cal_test", "fail")
+  df$centre_cal_test[df$Calibrated_Distance<centre_threshold & df$Calibrated_Distance>-centre_threshold] <- "pass"
+  
+  return(df)
+  
+}
+```
 
 
 Set up the database connection
@@ -249,105 +314,6 @@ FROM "10fff"
 WHERE QA_Date >= '2021-04-01'
 ```
 
-Set up the dataframes with pass/fail columns
-
-```{r}
-symmetry_threshold <- 2
-flat_threshold <- 103
-distance_threshold <- 0.5
-
-# set the mpc thresholds
-centre_threshold <- 0.5
-uniformity_threshold <- 2
-output_threshold <- 2
-
-  
-  # Add pass / fail columns to the df based on these thresholds
-
-# 6x  
-  # uniformity
-recent6x$uniformity_test <- "fail"
-recent6x$uniformity_test[recent6x$Uniformity<uniformity_threshold & recent6x$Uniformity>-uniformity_threshold] <- "pass"
-  
-  # combined symmetry
-  # fail if 1 of them fails
-recent6x$symm_test <- "fail"
-recent6x$symm_test[recent6x$SymmInAT<symmetry_threshold & recent6x$SymmInAT>-symmetry_threshold & recent6x$SymmCrossAT<symmetry_threshold & recent6x$SymmCrossAT>-symmetry_threshold] <- "pass"
-  
-  
-  # fail for inline only
-recent6x$symm_in_test <- "fail"
-recent6x$symm_in_test[recent6x$SymmInAT<symmetry_threshold & recent6x$SymmInAT>-symmetry_threshold] <- "pass"
-  
-  # fail for crossline only
-recent6x$symm_cross_test <- "fail"
-recent6x$symm_cross_test[recent6x$SymmCrossAT<symmetry_threshold & recent6x$SymmCrossAT>-symmetry_threshold] <- "pass"
-
-# centre shift
-recent6x$centre_mpc_test <- "fail"
-recent6x$centre_mpc_test[recent6x$MPC_Distance<distance_threshold & recent6x$MPC_Distance>-distance_threshold] <- "pass"
-
-recent6x$centre_cal_test <- "fail"
-recent6x$centre_cal_test[recent6x$Calibrated_Distance<centre_threshold & recent6x$Calibrated_Distance>-centre_threshold] <- "pass"
-
-# 10x
-  
-  # uniformity
-recent6x$uniformity_test <- "fail"
-recent6x$uniformity_test[recent6x$Uniformity<uniformity_threshold & recent6x$Uniformity>-uniformity_threshold] <- "pass"
-  
-  # combined symmetry
-  # fail if 1 of them fails
-recent6x$symm_test <- "fail"
-recent6x$symm_test[recent6x$SymmInAT<symmetry_threshold & recent6x$SymmInAT>-symmetry_threshold & recent6x$SymmCrossAT<symmetry_threshold & recent6x$SymmCrossAT>-symmetry_threshold] <- "pass"
-  
-  
-  # fail for inline only
-recent10x$symm_in_test <- "fail"
-recent10x$symm_in_test[recent10x$SymmInAT<symmetry_threshold & recent10x$SymmInAT>-symmetry_threshold] <- "pass"
-  
-  # fail for crossline only
-recent10x$symm_cross_test <- "fail"
-recent10x$symm_cross_test[recent10x$SymmCrossAT<symmetry_threshold & recent10x$SymmCrossAT>-symmetry_threshold] <- "pass"
-
-# centre shift
-recent10x$centre_mpc_test <- "fail"
-recent10x$centre_mpc_test[recent10x$MPC_Distance<distance_threshold & recent10x$MPC_Distance>-distance_threshold] <- "pass"
-
-recent10x$centre_cal_test <- "fail"
-recent10x$centre_cal_test[recent10x$Calibrated_Distance<centre_threshold & recent10x$Calibrated_Distance>-centre_threshold] <- "pass"
-
-  # uniformity
-recent10x$uniformity_test <- "fail"
-recent10x$uniformity_test[recent10x$Uniformity<uniformity_threshold & recent10x$Uniformity>-uniformity_threshold] <- "pass"
-
-# 10fff
-  
-  # uniformity
-recent10fff$uniformity_test <- "fail"
-recent10fff$uniformity_test[recent10fff$Uniformity<uniformity_threshold & recent10fff$Uniformity>-uniformity_threshold] <- "pass"
-  
-  # combined symmetry
-  # fail if 1 of them fails
-recent10fff$symm_test <- "fail"
-recent10fff$symm_test[recent10fff$SymmInAT<symmetry_threshold & recent10fff$SymmInAT>-symmetry_threshold & recent10fff$SymmCrossAT<symmetry_threshold & recent10fff$SymmCrossAT>-symmetry_threshold] <- "pass"
-  
-  
-  # fail for inline only
-recent10fff$symm_in_test <- "fail"
-recent10fff$symm_in_test[recent10fff$SymmInAT<symmetry_threshold & recent10fff$SymmInAT>-symmetry_threshold] <- "pass"
-  
-  # fail for crossline only
-recent10fff$symm_cross_test <- "fail"
-recent10fff$symm_cross_test[recent10fff$SymmCrossAT<symmetry_threshold & recent10fff$SymmCrossAT>-symmetry_threshold] <- "pass"
-
-# centre shift
-recent10fff$centre_mpc_test <- "fail"
-recent10fff$centre_mpc_test[recent10fff$MPC_Distance<distance_threshold & recent10fff$MPC_Distance>-distance_threshold] <- "pass"
-
-recent10fff$centre_cal_test <- "fail"
-recent10fff$centre_cal_test[recent10fff$Calibrated_Distance<centre_threshold & recent10fff$Calibrated_Distance>-centre_threshold] <- "pass"
-```
 
 
 Remove outliers from the recent dfs so that we don't skew the results? Particularly for 10FFF. While these data points are valid, they are going to mess up all the results - we know the flattening free will have bigger fluctuations but retaining them bias's the analysis; it removes the actual relationship from sight - SD and mean are sensitive to outliers and look at the boxplot - we can't see most of the spread - including outliers means that later we can't see the correlations.
@@ -512,72 +478,76 @@ z.paired(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance, 0.5, alpha = 0
 
 Sensitivity and Specificty
 
+add pass/fail columns to the dataframe
+```{r}
+
+recent6x <- add_cols(recent6x)
+recent10x <- add_cols(recent10x)
+recent10fff <- add_cols(recent10fff)
+
+
+```
+
 6x
 
 ```{r}
 
-sens_spec(recent6x$uniformity_test, recent6x$symm_test)
+calc_sens_spec <- function(df){
 
-sens_spec(recent6x$uniformity_test, recent6x$symm_in_test)
-
-sens_spec(recent6x$uniformity_test, recent6x$symm_cross_test)
-
-sens_spec(recent6x$centre_mpc_test, recent6x$centre_cal_test)
-
-```
-
-
-function to add pass/fail columns to the dataframe
-```{r}
-
-add_cols <- function(df){
+  # symmetry against uniformity
+  print(" Uniformity vs Combined Symmetry ")
+  sens_spec(df$uniformity_test, df$symm_test)
+  print(" Uniformity vs symmetry inline ")
+  sens_spec(df$uniformity_test, df$symm_in_test)
+  print("Uniformity vs symmetry crossline ")
+  sens_spec(df$uniformity_test, df$symm_cross_test)
   
-  symmetry_threshold <- 2
-  flat_threshold <- 103
-  distance_threshold <- 0.5
+  # symmetry against beam output change
+  print("Beam output vs symmetry")
+  sens_spec(df$output_test, df$symm_test)
+  print("Beam output vs symmetry inline")
+  sens_spec(df$output_test, df$symm_in_test)
+  print("Beam output vs symmetry crossline")
+  sens_spec(df$output_test, df$symm_cross_test)
   
-  # set the mpc thresholds
-  centre_threshold <- 0.5
-  uniformity_threshold <- 2
-  output_threshold <- 2
-
+  # centre shift distance
+  print("Beam centre shift: MPC vs calibrated")
+  sens_spec(df$centre_mpc_test, df$centre_cal_test)
+  
+   # flatness against uniformity
+  print(" Uniformity vs Combined Symmetry ")
+  sens_spec(df$uniformity_test, df$flat_test)
+  print(" Uniformity vs flatness inline ")
+  sens_spec(df$uniformity_test, df$flat_in_test)
+  print("Uniformity vs flatness crossline ")
+  sens_spec(df$uniformity_test, df$flat_cross_test)
+  
+  # flatness against beam output change
+  print("Beam output vs flatness")
+  sens_spec(df$output_test, df$flat_test)
+  print("Beam output vs flatness inline")
+  sens_spec(df$output_test, df$flat_in_test)
+  print("Beam output vs flatness crossline")
+  sens_spec(df$output_test, df$flat_cross_test)
+  
   
 }
-  
-  # Add pass / fail columns to the df based on these thresholds
 
-# 6x  
-  # uniformity
-recent6x$uniformity_test <- "fail"
-recent6x$uniformity_test[recent6x$Uniformity<uniformity_threshold & recent6x$Uniformity>-uniformity_threshold] <- "pass"
-  
-  # combined symmetry
-  # fail if 1 of them fails
-recent6x$symm_test <- "fail"
-recent6x$symm_test[recent6x$SymmInAT<symmetry_threshold & recent6x$SymmInAT>-symmetry_threshold & recent6x$SymmCrossAT<symmetry_threshold & recent6x$SymmCrossAT>-symmetry_threshold] <- "pass"
-  
-  
-  # fail for inline only
-recent6x$symm_in_test <- "fail"
-recent6x$symm_in_test[recent6x$SymmInAT<symmetry_threshold & recent6x$SymmInAT>-symmetry_threshold] <- "pass"
-  
-  # fail for crossline only
-recent6x$symm_cross_test <- "fail"
-recent6x$symm_cross_test[recent6x$SymmCrossAT<symmetry_threshold & recent6x$SymmCrossAT>-symmetry_threshold] <- "pass"
+calc_sens_spec(recent6x)
+
 ```
-
 
 10x
 
 ```{r}
-sens_spec(recent10x$uniformity_test, recent10x$symm_in_test)
+calc_sens_spec(recent10x)
 
-sens_spec(recent10x$uniformity_test, recent10x$symm_cross_test)
-
-sens_spec(recent10x$centre_mpc_test, recent10x$centre_cal_test)
-
-sum(recent10x$symm_cross_test == "pass")
 ```
+
+```{r}
+calc_sens_spec(recent10fff)
+```
+
 
 Percentage difference of symmetry to uniformity
 ```{r}
