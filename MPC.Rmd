@@ -195,7 +195,7 @@ false_neg <- sum(var1 == "fail" & var2 == "pass")
 true_neg <- sum(var1 == "fail" & var2 == "fail")
 
 sens <- true_pos / (true_pos + false_neg)
-cat("Sensitivity is ", sens)
+cat("   Sensitivity is ", sens)
 
 spec <- true_neg / (true_neg + false_pos)
 cat("  Specificity is ", spec)
@@ -261,7 +261,6 @@ centre_threshold <- 0.5
 uniformity_threshold <- 2
 output_threshold <- 2
 
-
   
   # Add pass / fail columns to the df based on these thresholds
 
@@ -318,6 +317,10 @@ recent10x$centre_mpc_test[recent10x$MPC_Distance<distance_threshold & recent10x$
 recent10x$centre_cal_test <- "fail"
 recent10x$centre_cal_test[recent10x$Calibrated_Distance<centre_threshold & recent10x$Calibrated_Distance>-centre_threshold] <- "pass"
 
+  # uniformity
+recent10x$uniformity_test <- "fail"
+recent10x$uniformity_test[recent10x$Uniformity<uniformity_threshold & recent10x$Uniformity>-uniformity_threshold] <- "pass"
+
 # 10fff
   
   # uniformity
@@ -347,33 +350,39 @@ recent10fff$centre_cal_test[recent10fff$Calibrated_Distance<centre_threshold & r
 ```
 
 
-Remove outliers from the recent dfs so that we don't skew the results? Particularlay for 10FFF. While these data points are valid, they are going to mess up all the results - we know the flattening free will have bigger fluctuations but retaining them bias's the analysis; it removes the actual relationship from sight - SD and mean are sensitive to outliers and look at the boxplot - we can't see most of the spread - including outliers means that later we can't see the correlations.
+Remove outliers from the recent dfs so that we don't skew the results? Particularly for 10FFF. While these data points are valid, they are going to mess up all the results - we know the flattening free will have bigger fluctuations but retaining them bias's the analysis; it removes the actual relationship from sight - SD and mean are sensitive to outliers and look at the boxplot - we can't see most of the spread - including outliers means that later we can't see the correlations.
+
+Remove outliers - visual inspection to check the outliers have been removed successfully/
 
 ```{r}
-boxplot(recent10fff$SymmInAT, recent10fff$SymmCrossAT)
-boxplot(recent10fff$FlatCrossAT, recent10fff$FlatInAT)
 
-boxplot(recent10fff$SymmInBT, recent10fff$SymmCrossBT)
-boxplot(recent10fff$FlatCrossBT, recent10fff$FlatInBT)
+# symmetry 
+boxplot(recent10fff$SymmCrossAT, plot=FALSE)$out
+outliers <- boxplot(recent10fff$SymmCrossAT, plot=FALSE)$out
+symm_out_rm<-recent10fff
+symm_out_rm<- symm_out_rm[-which(recent10fff$SymmCrossAT %in% outliers),]
 
-is.numeric(recent10fff$SymmInAT)
-sapply(recent10fff, class)
+boxplot(recent10fff$SymmCrossAT, symm_out_rm$SymmCrossAT)
+boxplot(recent10fff$SymmInAT, symm_out_rm$SymmInAT)
 
-quantile(as.vector(recent10fff$SymmCrossAT))
+# flatness crossline
+boxplot(recent10fff$FlatCrossAT, plot=FALSE)$out
+outliers <- boxplot(recent10fff$FlatCrossAT, plot=FALSE)$out
+flat_cross_rm<-recent10fff
+flat_cross_rm<- flat_cross_rm[-which(recent10fff$FlatCrossAT %in% outliers),]
 
-q <- as.numeric(recent10fff$SymmInAT)
-sapply(q,class)
-quantile(q)
+# flatness inline
+boxplot(recent10fff$FlatInsAT, plot=FALSE)$out
+outliers <- boxplot(recent10fff$FlatInAT, plot=FALSE)$out
+flat_in_rm<-recent10fff
+flat_in_rm<- flat_in_rm[-which(recent10fff$FlatInAT %in% outliers),]
 
-Q1 <- quantile(recent10fff$SymmInAT)
-iqr <- IQR(recent10fff$SymmInAT)
-up <-  Q[2]+1.5*iqr # Upper Range  
-low<- Q[1]-1.5*iqr
+boxplot(recent10fff$FlatInAT, flat_in_rm$FlatInAT)
+boxplot(recent10fff$FlatCrossAT, flat_cross_rm$FlatCrossAT)
 
-eliminated<- subset(recent10fff, recent10fff$SymmInAT > (Q[1] - 1.5*iqr) & recent10fff$SymmInAT < (Q[2]+1.5*iqr))
-boxplot(recent10fff$SymmInAT, eliminated)
 
 ```
+
 
 
 Descriptive statistics with psych
@@ -394,6 +403,9 @@ set.seed(1) # set seed makes the analysis reproducible
 rand_6x <- recent6x[sample(nrow(recent6x), size=50), ]
 rand_10x <- recent10x[sample(nrow(recent10x), size=50), ]
 rand_10fff <- recent10fff[sample(nrow(recent10fff), size=50), ]
+rand_10fff_rm_symm <- symm_out_rm[sample(nrow(symm_out_rm), size=50),]
+rand_10fff_rm_flat_in <- flat_in_rm[sample(nrow(flat_in_rm), size=50),]
+rand_10fff_rm_flat_cross<- flat_cross_rm[sample(nrow(flat_cross_rm), size=50),]
 ```
 
 
@@ -429,6 +441,7 @@ z.paired(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
 
 boxplot(rand_10fff$FlatInAT, rand_10fff$FlatCrossAT)
 z.paired(rand_10fff$FlatInAT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
+
 ```
 
 
@@ -474,6 +487,13 @@ z.paired(rand_10fff$FlatInBT, rand_10fff$FlatInAT, 0, alpha = 0.05)
 
 boxplot(rand_10fff$FlatCrossBT, rand_10fff$FlatCrossAT)
 z.paired(rand_10fff$FlatCrossBT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
+
+boxplot(rand_10fff_rm_flat_in$FlatInAT, rand_10fff_rm_flat_in$FlatInBT)
+z.paired(rand_10fff_rm_flat_in$FlatInAT, rand_10fff_rm_flat_in$FlatInBT, 0, alpha = 0.05)
+
+boxplot(rand_10fff_rm_flat_cross$FlatCrossAT, rand_10fff_rm_flat_cross$FlatCrossBT)
+z.paired(rand_10fff_rm_flat_cross$FlatCrossAT, rand_10fff_rm_flat_cross$FlatCrossBT, 0, alpha = 0.05)
+
 ```
 
 Compare the beam centre shift
@@ -490,7 +510,9 @@ z.paired(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance, 0.5, alpha = 0
 ```
 
 
-Sensitivty and Specificty
+Sensitivity and Specificty
+
+6x
 
 ```{r}
 
@@ -500,21 +522,79 @@ sens_spec(recent6x$uniformity_test, recent6x$symm_in_test)
 
 sens_spec(recent6x$uniformity_test, recent6x$symm_cross_test)
 
-
 sens_spec(recent6x$centre_mpc_test, recent6x$centre_cal_test)
 
 ```
 
+
+function to add pass/fail columns to the dataframe
+```{r}
+
+add_cols <- function(df){
+  
+  symmetry_threshold <- 2
+  flat_threshold <- 103
+  distance_threshold <- 0.5
+  
+  # set the mpc thresholds
+  centre_threshold <- 0.5
+  uniformity_threshold <- 2
+  output_threshold <- 2
+
+  
+}
+  
+  # Add pass / fail columns to the df based on these thresholds
+
+# 6x  
+  # uniformity
+recent6x$uniformity_test <- "fail"
+recent6x$uniformity_test[recent6x$Uniformity<uniformity_threshold & recent6x$Uniformity>-uniformity_threshold] <- "pass"
+  
+  # combined symmetry
+  # fail if 1 of them fails
+recent6x$symm_test <- "fail"
+recent6x$symm_test[recent6x$SymmInAT<symmetry_threshold & recent6x$SymmInAT>-symmetry_threshold & recent6x$SymmCrossAT<symmetry_threshold & recent6x$SymmCrossAT>-symmetry_threshold] <- "pass"
+  
+  
+  # fail for inline only
+recent6x$symm_in_test <- "fail"
+recent6x$symm_in_test[recent6x$SymmInAT<symmetry_threshold & recent6x$SymmInAT>-symmetry_threshold] <- "pass"
+  
+  # fail for crossline only
+recent6x$symm_cross_test <- "fail"
+recent6x$symm_cross_test[recent6x$SymmCrossAT<symmetry_threshold & recent6x$SymmCrossAT>-symmetry_threshold] <- "pass"
+```
+
+
+10x
+
+```{r}
+sens_spec(recent10x$uniformity_test, recent10x$symm_in_test)
+
+sens_spec(recent10x$uniformity_test, recent10x$symm_cross_test)
+
+sens_spec(recent10x$centre_mpc_test, recent10x$centre_cal_test)
+
+sum(recent10x$symm_cross_test == "pass")
+```
+
 Percentage difference of symmetry to uniformity
 ```{r}
-ratio <- recent6x$SymmInAT / recent6x$Uniformity
-mean(ratio)
+ratio1 <- recent6x$SymmInAT / recent6x$Uniformity
+mean(ratio1)
 
 ratio <- recent6x$SymmCrossAT / recent6x$Uniformity
 mean(ratio)
 
 recent6x$AvSymm <- (recent6x$SymmInAT + recent6x$SymmCrossAT) / 2
 mean( recent6x$AvSymm / recent6x$Uniformity)
+
+ggplot(data = recent6x, aes(x = QA_Date, y = ratio)) +
+  geom_point()
+
+ggplot(data = recent6x, aes(x = QA_Date, y = ratio1)) +
+  geom_point()
 ```
 
 Compare the symmetry in each direction to the uniformity
@@ -586,14 +666,6 @@ ggplot(recent6x, aes(x = QA_Date, y = FlatCrossAT)) +
   xlab("QA Date") +
   ylab("symm") +
   ggtitle("symm Changes against Time")
-
-n <-length(recent6x$SymmCrossAT)
-newdata <- 1:10*n
-recent6x$index <- 1:n
-loessmod <- loess(SymmCrossAT ~ index, data = recent6x)
-smoothed <- predict(loessmod, newdata = newdata)
-plot(x = recent6x$QA_Date, y = recent6x$SymmCrossAT)
-lines(smoothed, x = newdata)
 ```
 
 
