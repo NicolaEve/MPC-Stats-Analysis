@@ -366,15 +366,18 @@ Get a dataframe for each beam energy
 ```{sql connection=con, output.var = "df6x"}
 SELECT *
 FROM "6x"
+WHERE QA_Date >= '2018-01-01'
 ```
 ```{sql connection=con, output.var = "df10x"}
 SELECT *
 FROM "10x"
+WHERE QA_Date >= '2018-01-01'
 
 ```
 ```{sql connection=con, output.var = "df10fff"}
 SELECT *
 FROM "10fff"
+WHERE QA_Date >= '2018-01-01'
 
 ```
 
@@ -466,7 +469,7 @@ boxplot(recent6x$FlatInAT, recent6x$FlatCrossAT, recent10x$FlatInAT, recent10x$F
 legend(x = "topright", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
 
 boxplot(rm_out_10fff$FlatInAT, rm_out_10fff$FlatCrossAT, main = "Flatness", names = c("10xFFF", "10xFFF"), col = c(2,3))
-legend(x = "right", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
+legend(x = "topright", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
 
 # Compare symm and flat
 # 6x
@@ -510,17 +513,14 @@ z.paired(rand_10fff$SymmCrossBT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
 Flatness
 ```{r}
 
-boxplot(recent6x$FlatInBT, recent6x$FlatInAT, recent10x$FlatInBT, recent10x$FlatInAT, main = "Flatness Inline (%)", names = c("6x", "6x", "10x", "10x"), col = c(2,3,2,3))
+boxplot(recent6x$FlatInBT, recent6x$FlatInAT, recent10x$FlatInBT, recent10x$FlatInAT, main = "Flatness Inline", names = c("6x", "6x", "10x", "10x"), col = c(2,3,2,3))
 legend(x = "topright", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
 
-boxplot(flat_in_rm$FlatInBT, flat_in_rm$FlatInAT, main = "Flatness Inline (%)", names = c("10fff", "10fff"), col = c(2,3))
-legend(x = "right", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
+boxplot(rm_out_10fff$FlatInBT, rm_out_10fff$FlatInAT, rm_out_10fff$FlatCrossBT, rm_out_10fff$FlatCrossAT, main = "Flatness: 10xFFF", names = c("Inline", "Inline", "Crossline", "Crossline"), col = c(2,3,2,3))
+legend(x = "topleft", legend = c("Before", "After"), fill = 2:3, col = c("orange", "red"))
 
-boxplot(recent6x$FlatCrossBT, recent6x$FlatCrossAT, recent10x$FlatCrossBT, recent10x$FlatCrossAT, main = "Flatness Crossline (%)", names = c("6x", "6x", "10x", "10x"), col = c(2,3,2,3))
+boxplot(recent6x$FlatCrossBT, recent6x$FlatCrossAT, recent10x$FlatCrossBT, recent10x$FlatCrossAT, main = "Flatness Crossline", names = c("6x", "6x", "10x", "10x"), col = c(2,3,2,3))
 legend(x = "topright", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
-
-boxplot(flat_cross_rm$FlatCrossBT, flat_cross_rm$FlatCrossAT, main = "Flatness Crossline (%)", names = c("10fff", "10fff"), col = c(2,3))
-legend(x = "right", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
 
 # 6x
 z.paired(rand_6x$FlatInBT, rand_6x$FlatInAT, 0, alpha = 0.05)
@@ -535,8 +535,8 @@ z.paired(rand_10x$FlatCrossBT, rand_10x$FlatCrossAT, 0, alpha = 0.05)
 #z.paired(rand_10fff$FlatCrossBT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
 
 # 10fff with outliers removed, random sample
-z.paired(rand_10fff_rm_flat_in$FlatInBT, rand_10fff_rm_flat_in$FlatInAT)
-z.paired(rand_10fff_rm_flat_cross$FlatCrossBT, rand_10fff_rm_flat_cross$FlatCrossAT)
+z.paired(rand_10fff_rm_out$FlatInBT, rand_10fff_rm_out$FlatInAT)
+z.paired(rand_10fff_rm_out$FlatCrossBT, rand_10fff_rm_out$FlatCrossAT)
 ```
 
 
@@ -631,7 +631,8 @@ Symm_Flat_Rel(recent10fff)
 ```{r}
 plot_cor(recent6x, energy = "6x")
 plot_cor(recent10x, energy = "10x")
-plot_cor(recent10fff, energy = "10FFF")
+plot_cor(recent10fff, energy = "10xFFF")
+plot_cor(rm_out_10fff, energy = "10xFFF (outliers removed)")
 
 ```
 
@@ -659,6 +660,7 @@ print(ggplot(df, aes(x = QA_Date)) +
 plot_time(recent6x, "6x")
 plot_time(recent10x, "10x")
 plot_time(recent10fff, "10xFFF")
+plot_time(rm_out_10fff, "10xFFF (outliers removed)")
 
 ```
 
@@ -670,21 +672,21 @@ plot_mpc_time <- function(df, energy){
   
   print(ggplot(df, aes(QA_Date, Output_Change)) +
   geom_point() +
-    geom_smooth(aes(x = QA_Date, y = Output_Change), method = "gam") +
+    #geom_smooth(aes(x = QA_Date, y = Output_Change), method = "gam") +
   xlab("QA Date") +
   ylab("Output Change") +
   ggtitle(paste("Output Changes against Time", energy)))
   
     print(ggplot(df, aes(QA_Date, Uniformity)) +
   geom_point() +
-    geom_smooth(aes(x = QA_Date, y = Uniformity), method = "gam") +
+    #geom_smooth(aes(x = QA_Date, y = Uniformity), method = "gam") +
   xlab("QA Date") +
   ylab("Uniformity") +
   ggtitle(paste("Uniformity against Time", energy)))
     
     print(ggplot(df, aes(QA_Date, MPC_Distance)) +
   geom_point() +
-    geom_smooth(aes(x = QA_Date, y = MPC_Distance), method = "gam") +
+    #geom_smooth(aes(x = QA_Date, y = MPC_Distance), method = "gam") +
   xlab("QA Date") +
   ylab("Beam Centre Shift (mm)") +
   ggtitle(paste("Centre shift against Time", energy)))
@@ -692,9 +694,28 @@ plot_mpc_time <- function(df, energy){
 
 }
 
-plot_mpc_time(df6x, "6x")
 ```
 
+MPC results against time
+```{r}
+
+
+plot_mpc_time(df6x, "6x")
+plot_mpc_time(df10x, "10x")
+plot_mpc_time(df10fff, "10xFFF")
+
+# remove outliers so we can build a predictive model
+# this removes everything
+cols = c("Uniformity", "Output_Change", "MPC_Distance")
+df6x_rm_out <- remove_outliers(df6x, c("Uniformity", "Output_Change", "MPC_Distance"))
+df10x_rm_out <- remove_outliers(df10x, cols)
+df10fff_rm_out <- remove_outliers(df10fff, cols)
+
+#plot_mpc_time(df6x_rm_out, "6x")
+#plot_mpc_time(df10x_rm_out, "10x")
+#plot_mpc_time(df10fff_rm_out, "10xFFF")
+```
+centre shift of MPC and my algorithm - shows bias
 ```{r}
 plot_centre_shift <- function(df, energy){
   colors <- c("MPC" = "blue", "Calibrated" = "red")
@@ -710,11 +731,15 @@ plot_centre_shift <- function(df, energy){
 }
 
 plot_centre_shift(recent6x, "6x")
+plot_centre_shift(recent10x, "10x")
+plot_centre_shift(recent10fff, "10xFFF")
 
 ```
 
 
-Forecasting
+Predicting future values
+
+Forecasting with ARIMA
 ```{r}
 # Fit and forecast with auto.arima()
 # make it a time series 
