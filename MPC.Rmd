@@ -251,8 +251,8 @@ calc_sens_spec <- function(df){
 
 add_cols <- function(df){
   
-  symmetry_threshold <- 2
-  flat_threshold <- 103
+  symmetry_threshold <- 3
+  flat_threshold <- 106
   distance_threshold <- 0.5
   
   # set the mpc thresholds
@@ -405,30 +405,19 @@ Remove outliers - visual inspection to check the outliers have been removed succ
 
 ```{r}
 
-# symmetry 
-boxplot(recent10fff$SymmCrossAT, plot=FALSE)$out
-outliers <- boxplot(recent10fff$SymmCrossAT, plot=FALSE)$out
-symm_out_rm<-recent10fff
-symm_out_rm<- symm_out_rm[-which(recent10fff$SymmCrossAT %in% outliers),]
 
-boxplot(recent10fff$SymmCrossAT, symm_out_rm$SymmCrossAT)
-boxplot(recent10fff$SymmInAT, symm_out_rm$SymmInAT)
+remove_outliers <- function(df, cols = names(df)) {
+  for (col in cols) {
+    boxplot(df[[col]], plot=FALSE)$out
+    outliers <- boxplot(df[[col]], plot=FALSE)$out
+    df <- df[-which(df[[col]] %in% outliers),]
+  }
+  df
+}
 
-# flatness crossline
-boxplot(recent10fff$FlatCrossAT, plot=FALSE)$out
-outliers <- boxplot(recent10fff$FlatCrossAT, plot=FALSE)$out
-flat_cross_rm<-recent10fff
-flat_cross_rm<- flat_cross_rm[-which(recent10fff$FlatCrossAT %in% outliers),]
+# we want to remove outliers from all 4 flatness columns of 10FFF beam
 
-# flatness inline
-boxplot(recent10fff$FlatInsAT, plot=FALSE)$out
-outliers <- boxplot(recent10fff$FlatInAT, plot=FALSE)$out
-flat_in_rm<-recent10fff
-flat_in_rm<- flat_in_rm[-which(recent10fff$FlatInAT %in% outliers),]
-
-boxplot(recent10fff$FlatInAT, flat_in_rm$FlatInAT)
-boxplot(recent10fff$FlatCrossAT, flat_cross_rm$FlatCrossAT)
-
+rm_out_10fff <- remove_outliers(recent10fff, c("FlatInAT", "FlatCrossAT", "FlatInBT", "FlatCrossBT"))
 
 ```
 
@@ -452,9 +441,8 @@ set.seed(1) # set seed makes the analysis reproducible
 rand_6x <- recent6x[sample(nrow(recent6x), size=50), ]
 rand_10x <- recent10x[sample(nrow(recent10x), size=50), ]
 rand_10fff <- recent10fff[sample(nrow(recent10fff), size=50), ]
-rand_10fff_rm_symm <- symm_out_rm[sample(nrow(symm_out_rm), size=50),]
-rand_10fff_rm_flat_in <- flat_in_rm[sample(nrow(flat_in_rm), size=50),]
-rand_10fff_rm_flat_cross<- flat_cross_rm[sample(nrow(flat_cross_rm), size=50),]
+rand_10fff_rm_out <- rm_out_10fff[sample(nrow(rm_out_10fff), size=50),]
+
 ```
 
 
@@ -477,7 +465,7 @@ legend(x = "topright", legend = c("Inline", "Crossline"), fill = 2:3, col = c("o
 boxplot(recent6x$FlatInAT, recent6x$FlatCrossAT, recent10x$FlatInAT, recent10x$FlatCrossAT, main = "Flatness", names = c("6x", "6x", "10x", "10x"), col = c(2,3,2,3))
 legend(x = "topright", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
 
-boxplot(recent10fff$FlatInAT, recent10fff$FlatCrossAT, main = "Flatness", names = c("10xFFF", "10xFFF"), col = c(2,3))
+boxplot(rm_out_10fff$FlatInAT, rm_out_10fff$FlatCrossAT, main = "Flatness", names = c("10xFFF", "10xFFF"), col = c(2,3))
 legend(x = "right", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
 
 # Compare symm and flat
@@ -490,8 +478,8 @@ z.paired(rand_10x$SymmInAT, rand_10x$SymmCrossAT, 0, alpha = 0.05)
 z.paired(rand_10x$FlatInAT, rand_10x$FlatCrossAT, 0, alpha = 0.05)
 
 # 10xFFF
-z.paired(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
-z.paired(rand_10fff$FlatInAT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
+z.paired(rand_10fff_rm_out$SymmInAT, rand_10fff_rm_out$SymmCrossAT, 0, alpha = 0.05)
+z.paired(rand_10fff_rm_out$FlatInAT, rand_10fff_rm_out$FlatCrossAT, 0, alpha = 0.05)
 ```
 
 
@@ -518,6 +506,7 @@ z.paired(rand_10fff$SymmInBT, rand_10fff$SymmInAT, 0, alpha = 0.05)
 z.paired(rand_10fff$SymmCrossBT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
 
 ```
+
 Flatness
 ```{r}
 
@@ -545,9 +534,9 @@ z.paired(rand_10x$FlatCrossBT, rand_10x$FlatCrossAT, 0, alpha = 0.05)
 #z.paired(rand_10fff$FlatInBT, rand_10fff$FlatInAT, 0, alpha = 0.05)
 #z.paired(rand_10fff$FlatCrossBT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
 
-# 10fff with outliers removed
-z.paired(flat_in_rm$FlatInBT, flat_in_rm$FlatInAT)
-z.paired(flat_cross_rm$FlatCrossBT, flat_cross_rm$FlatCrossAT)
+# 10fff with outliers removed, random sample
+z.paired(rand_10fff_rm_flat_in$FlatInBT, rand_10fff_rm_flat_in$FlatInAT)
+z.paired(rand_10fff_rm_flat_cross$FlatCrossBT, rand_10fff_rm_flat_cross$FlatCrossAT)
 ```
 
 
@@ -568,6 +557,8 @@ z.paired(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance, 0.5, alpha = 0
 
 
 Sensitivity and Specificity
+
+true negs/pos will be logged somewhere? not loads so could do manually
 
 ```{r}
 sum(df10fff$MPC_Distance > 0.5) + sum(df10fff$MPC_Distance < - 0.5)
@@ -610,13 +601,11 @@ Compare how much difference there is overall - e.g. all symmetry values are with
 6x
 ```{r}
 difference(recent6x)
-
 ```
 
 10x
 ````{r}
 difference(recent10x)
-
 ```
 
 10fff
@@ -626,6 +615,7 @@ difference(recent10fff)
 
 
 Are there a correlations between symmetry, flatness and uniformity, output change?
+With time?
 
 ```{r}
 Symm_Flat_Rel(recent6x)
@@ -642,6 +632,7 @@ Symm_Flat_Rel(recent10fff)
 plot_cor(recent6x, energy = "6x")
 plot_cor(recent10x, energy = "10x")
 plot_cor(recent10fff, energy = "10FFF")
+
 ```
 
 Plot the flatness and symmetry against time
@@ -668,6 +659,7 @@ print(ggplot(df, aes(x = QA_Date)) +
 plot_time(recent6x, "6x")
 plot_time(recent10x, "10x")
 plot_time(recent10fff, "10xFFF")
+
 ```
 
 
@@ -685,14 +677,14 @@ plot_mpc_time <- function(df, energy){
   
     print(ggplot(df, aes(QA_Date, Uniformity)) +
   geom_point() +
-    geom_smooth(aes(x = QA_Date, y = Uniformity), method = "loess") +
+    geom_smooth(aes(x = QA_Date, y = Uniformity), method = "gam") +
   xlab("QA Date") +
   ylab("Uniformity") +
   ggtitle(paste("Uniformity against Time", energy)))
     
     print(ggplot(df, aes(QA_Date, MPC_Distance)) +
   geom_point() +
-    geom_smooth(aes(x = QA_Date, y = MPC_Distance), method = "loess") +
+    geom_smooth(aes(x = QA_Date, y = MPC_Distance), method = "gam") +
   xlab("QA Date") +
   ylab("Beam Centre Shift (mm)") +
   ggtitle(paste("Centre shift against Time", energy)))
