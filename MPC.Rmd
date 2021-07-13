@@ -58,10 +58,11 @@ z.test <- function(x, y){
   Z <- Normal(0,1) # make a standard normal r.v
   p = 2 * cdf(Z, abs(z_stat))
   return(c(z_stat, p))
+  
 }
-```
 
-```{r}
+
+# Paired Z tests
 z.paired <- function(x, y, d0, alpha){
   if(missing(d0)){d0 <- 0}
   if(missing(alpha)){alpha <- 0.05}
@@ -82,10 +83,11 @@ z.paired <- function(x, y, d0, alpha){
   if ( qnorm(alpha/2)< z & z < qnorm(1- (alpha/2))) {  cat("Null hypothesis can not be rejected, evidence the difference in means is equal to", d0)}
   
   return(c(z, p_value))
+  
 }
-```
 
-```{r}
+
+# Function to find the pearson's correlation between the variables
 Symm_Flat_Rel <- function(df){
   print("Symmetry Crossline and Inline")
 print(cor.test(df$SymmCrossAT, df$SymmInAT))
@@ -116,10 +118,11 @@ print(cor.test(df$Output_Change, df$FlatInAT))
 
 print("Output change and flatness crossline")
 print(cor.test(df$Output_Change, df$FlatCrossAT))
-}
-```
 
-```{r}
+}
+
+
+# Function to plot the relationships between variables
 plot_cor <- function(df, energy){
   
   colours <- c("Inline" = "blue", "Crossline" = "yellow")
@@ -184,11 +187,9 @@ print(ggplot(df, aes(x = MPC_Distance, y = Calibrated_Distance)) +
         labs(title = energy))
 
 }
-```
 
-sensitvity and specificty functions
 
-```{r}
+# Function to calculate sensitivty and specificty
 sens_spec <- function(var1, var2){
 
 false_pos <- sum(var1 == "pass" & var2 == "fail")
@@ -203,6 +204,8 @@ spec <- true_neg / (true_neg + false_pos)
 cat("  Specificity is ", spec)
 }
 
+
+# Function to calculate senstivity and specficity for each variable
 calc_sens_spec <- function(df){
 
   # symmetry against uniformity
@@ -240,50 +243,12 @@ calc_sens_spec <- function(df){
   sens_spec(df$output_test, df$flat_in_test)
   print("Beam output vs flatness crossline")
   sens_spec(df$output_test, df$flat_cross_test)
-  
-  
-}
-
-```
-
-max difference function
-```{r}
-
-difference <- function(df){
-  
-  # uniformity
-cat(" Max difference symmetry inline and uniformity is ", max( abs(df$SymmInAT - df$Uniformity)))
-  
-  cat(" Max differencesymmetry crossline and uniformity is ", max( abs(df$SymmCrossAT - df$Uniformity)))
-  
-  cat(" Max difference flatneess inline and uniformity is ", max( abs( (df$FlatInAT-100) - df$Uniformity)))
-  
-  cat(" Max difference flatness crossline and uniformity is ", max( abs( (df$FlatCrossAT-100) - df$Uniformity)))
-  
-  
-  
-  # output change
-  cat(" Max difference symmetry inline and output change is ", max( abs(df$SymmInAT - df$Output_Change)))
-  
-  cat(" Max difference symmetry crossline and output change is ", max( abs(df$SymmCrossAT - df$Output_Change)))
-  
-  cat(" Max difference flatness inline and output change is ", max( abs( (df$FlatInAT-100) - df$Output_Change)))
-  
-  cat(" Max difference flatness crossline and output change is ", max( abs( (df$FlatCrossAT-100) - df$Output_Change)))
-  
-  
-  
-  # beam centre shift
-  cat(" Max difference beam centre shift is ", max( abs(df$MPC_Distance - df$Calibrated_Distance)))
-
-  
 }
 
 
-```
-Function to add pass/fail columns to the dataframes
 
-```{r}
+# Function to add pass/fail columns to the dataframe
+
 add_cols <- function(df){
   
   symmetry_threshold <- 2
@@ -345,6 +310,45 @@ add_cols <- function(df){
   return(df)
   
 }
+
+
+```
+
+
+max difference function
+```{r}
+
+difference <- function(df){
+  
+  # uniformity
+cat(" Max difference symmetry inline and uniformity is ", max( abs(df$SymmInAT - df$Uniformity)))
+  
+  cat(" Max differencesymmetry crossline and uniformity is ", max( abs(df$SymmCrossAT - df$Uniformity)))
+  
+  cat(" Max difference flatneess inline and uniformity is ", max( abs( (df$FlatInAT-100) - df$Uniformity)))
+  
+  cat(" Max difference flatness crossline and uniformity is ", max( abs( (df$FlatCrossAT-100) - df$Uniformity)))
+  
+  
+  
+  # output change
+  cat(" Max difference symmetry inline and output change is ", max( abs(df$SymmInAT - df$Output_Change)))
+  
+  cat(" Max difference symmetry crossline and output change is ", max( abs(df$SymmCrossAT - df$Output_Change)))
+  
+  cat(" Max difference flatness inline and output change is ", max( abs( (df$FlatInAT-100) - df$Output_Change)))
+  
+  cat(" Max difference flatness crossline and output change is ", max( abs( (df$FlatCrossAT-100) - df$Output_Change)))
+  
+  
+  
+  # beam centre shift
+  cat(" Max difference beam centre shift is ", max( abs(df$MPC_Distance - df$Calibrated_Distance)))
+
+  
+}
+
+
 ```
 
 
@@ -461,32 +465,33 @@ Z test null hypothesis: the means of the two groups are equal
 The Z test statistic is inside the 95% confidence interval, so we can not reject the null hypothesis. 
 The p-value tells us how statistically significant this is and it is quite large; but still we don't have enough evidence to reject the null hypothesis.
 
-6x
+
+
+Comparing Symmetry and Flatness in each direction
 ```{r}
-boxplot(rand_6x$SymmInAT, rand_6x$SymmCrossAT)
+
+boxplot(recent6x$SymmInAT, recent6x$SymmCrossAT, recent10x$SymmInAT, recent10x$SymmCrossAT, recent10fff$SymmInAT, recent10fff$SymmCrossAT, main = "Symmetry (%)", names = c("6x", "6x", "10x", "10x", "10fff", "10fff"), col = c(2,3,2,3,2,3))
+legend(x = "topright", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
+
+
+boxplot(recent6x$FlatInAT, recent6x$FlatCrossAT, recent10x$FlatInAT, recent10x$FlatCrossAT, main = "Flatness", names = c("6x", "6x", "10x", "10x"), col = c(2,3,2,3))
+legend(x = "topright", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
+
+boxplot(recent10fff$FlatInAT, recent10fff$FlatCrossAT, main = "Flatness", names = c("10xFFF", "10xFFF"), col = c(2,3))
+legend(x = "topright", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
+
+# Compare symm and flat
+# 6x
 z.paired(rand_6x$SymmInAT, rand_6x$SymmCrossAT, 0, alpha = 0.05)
-
-boxplot(rand_6x$FlatInAT, rand_6x$FlatCrossAT)
 z.paired(rand_6x$FlatInAT, rand_6x$FlatCrossAT, 0, alpha = 0.05)
-```
 
-10x
-```{r}
-boxplot(rand_10x$SymmInAT, rand_10x$SymmCrossAT)
+# 10x
 z.paired(rand_10x$SymmInAT, rand_10x$SymmCrossAT, 0, alpha = 0.05)
-
-boxplot(rand_10x$FlatInAT, rand_10x$FlatCrossAT)
 z.paired(rand_10x$FlatInAT, rand_10x$FlatCrossAT, 0, alpha = 0.05)
-```
 
-10fff
-```{r}
-boxplot(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT)
+# 10xFFF
 z.paired(rand_10fff$SymmInAT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
-
-boxplot(rand_10fff$FlatInAT, rand_10fff$FlatCrossAT)
 z.paired(rand_10fff$FlatInAT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
-
 ```
 
 
@@ -666,7 +671,7 @@ plot_mpc_time <- function(df, energy){
   
   print(ggplot(df, aes(QA_Date, Output_Change)) +
   geom_point() +
-    geom_smooth(aes(x = QA_Date, y = Output_Change), method = "loess") +
+    geom_smooth(aes(x = QA_Date, y = Output_Change), method = "gam") +
   xlab("QA Date") +
   ylab("Output Change") +
   ggtitle(paste("Output Changes against Time", energy)))
