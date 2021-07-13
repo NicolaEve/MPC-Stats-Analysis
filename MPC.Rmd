@@ -478,7 +478,7 @@ boxplot(recent6x$FlatInAT, recent6x$FlatCrossAT, recent10x$FlatInAT, recent10x$F
 legend(x = "topright", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
 
 boxplot(recent10fff$FlatInAT, recent10fff$FlatCrossAT, main = "Flatness", names = c("10xFFF", "10xFFF"), col = c(2,3))
-legend(x = "topright", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
+legend(x = "right", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
 
 # Compare symm and flat
 # 6x
@@ -496,65 +496,72 @@ z.paired(rand_10fff$FlatInAT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
 
 
 Paired Z tests to see if there's a significant difference as a result of applying the calibration transformation.
-6x
-```{r}
-boxplot(rand_6x$SymmInBT, rand_6x$SymmInAT)
-z.paired(rand_6x$SymmInBT, rand_6x$SymmInAT, 0, alpha = 0.05)
 
-boxplot(rand_6x$SymmCrossBT, rand_6x$SymmCrossAT)
+Symmetry
+```{r}
+boxplot(recent6x$SymmInBT, recent6x$SymmInAT, recent10x$SymmInBT, recent10x$SymmInAT, recent10fff$SymmInBT, recent10fff$SymmInAT, main = "Symmetry Inline (%)", names = c("6x", "6x", "10x", "10x", "10fff", "10fff"), col = c(2,3,2,3,2,3))
+legend(x = "topright", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
+
+boxplot(recent6x$SymmCrossBT, recent6x$SymmCrossAT, recent10x$SymmCrossBT, recent10x$SymmCrossAT, recent10fff$SymmCrossBT, recent10fff$SymmCrossAT, main = "Symmetry Crossline (%)", names = c("6x", "6x", "10x", "10x", "10fff", "10fff"), col = c(2,3,2,3,2,3))
+legend(x = "topright", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
+
+# 6x
+z.paired(rand_6x$SymmInBT, rand_6x$SymmInAT, 0, alpha = 0.05)
 z.paired(rand_6x$SymmCrossBT, rand_6x$SymmCrossAT, 0, alpha = 0.05)
 
-boxplot(rand_6x$FlatInBT, rand_6x$FlatInAT)
-z.paired(rand_6x$FlatInBT, rand_6x$FlatInAT, 0, alpha = 0.05)
-
-boxplot(rand_6x$FlatCrossBT, rand_6x$FlatCrossAT)
-z.paired(rand_6x$FlatCrossBT, rand_6x$FlatCrossAT, 0, alpha = 0.05)
-```
-10x
-```{r}
-boxplot(rand_10x$SymmInBT, rand_10x$SymmInAT)
+# 10x
 z.paired(rand_10x$SymmInBT, rand_10x$SymmInAT, 0, alpha = 0.05)
-
-boxplot(rand_10x$SymmCrossBT, rand_10x$SymmCrossAT)
 z.paired(rand_10x$SymmCrossBT, rand_10x$SymmCrossAT, 0, alpha = 0.05)
 
-boxplot(rand_10x$FlatInBT, rand_10x$FlatInAT)
-z.paired(rand_10x$FlatInBT, rand_10x$FlatInAT, 0, alpha = 0.05)
-
-boxplot(rand_10x$FlatCrossBT, rand_10x$FlatCrossAT)
-z.paired(rand_10x$FlatCrossBT, rand_10x$FlatCrossAT, 0, alpha = 0.05)
-```
-10fff
-```{r}
-boxplot(rand_10fff$SymmInBT, rand_10fff$SymmInAT)
+# 10fff
 z.paired(rand_10fff$SymmInBT, rand_10fff$SymmInAT, 0, alpha = 0.05)
-
-boxplot(rand_10fff$SymmCrossBT, rand_10fff$SymmCrossAT)
 z.paired(rand_10fff$SymmCrossBT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
 
-boxplot(rand_10fff$FlatInBT, rand_10fff$FlatInAT)
-z.paired(rand_10fff$FlatInBT, rand_10fff$FlatInAT, 0, alpha = 0.05)
-
-boxplot(rand_10fff$FlatCrossBT, rand_10fff$FlatCrossAT)
-z.paired(rand_10fff$FlatCrossBT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
-
-boxplot(rand_10fff_rm_flat_in$FlatInAT, rand_10fff_rm_flat_in$FlatInBT)
-z.paired(rand_10fff_rm_flat_in$FlatInAT, rand_10fff_rm_flat_in$FlatInBT, 0, alpha = 0.05)
-
-boxplot(rand_10fff_rm_flat_cross$FlatCrossAT, rand_10fff_rm_flat_cross$FlatCrossBT)
-z.paired(rand_10fff_rm_flat_cross$FlatCrossAT, rand_10fff_rm_flat_cross$FlatCrossBT, 0, alpha = 0.05)
-
 ```
+Flatness
+```{r}
+
+boxplot(recent6x$FlatInBT, recent6x$FlatInAT, recent10x$FlatInBT, recent10x$FlatInAT, main = "Flatness Inline (%)", names = c("6x", "6x", "10x", "10x"), col = c(2,3,2,3))
+legend(x = "topright", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
+
+boxplot(flat_in_rm$FlatInBT, flat_in_rm$FlatInAT, main = "Flatness Inline (%)", names = c("10fff", "10fff"), col = c(2,3))
+legend(x = "right", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
+
+boxplot(recent6x$FlatCrossBT, recent6x$FlatCrossAT, recent10x$FlatCrossBT, recent10x$FlatCrossAT, main = "Flatness Crossline (%)", names = c("6x", "6x", "10x", "10x"), col = c(2,3,2,3))
+legend(x = "topright", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
+
+boxplot(flat_cross_rm$FlatCrossBT, flat_cross_rm$FlatCrossAT, main = "Flatness Crossline (%)", names = c("10fff", "10fff"), col = c(2,3))
+legend(x = "right", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
+
+# 6x
+z.paired(rand_6x$FlatInBT, rand_6x$FlatInAT, 0, alpha = 0.05)
+z.paired(rand_6x$FlatCrossBT, rand_6x$FlatCrossAT, 0, alpha = 0.05)
+
+# 10x
+z.paired(rand_10x$FlatInBT, rand_10x$FlatInAT, 0, alpha = 0.05)
+z.paired(rand_10x$FlatCrossBT, rand_10x$FlatCrossAT, 0, alpha = 0.05)
+
+# 10fff
+#z.paired(rand_10fff$FlatInBT, rand_10fff$FlatInAT, 0, alpha = 0.05)
+#z.paired(rand_10fff$FlatCrossBT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
+
+# 10fff with outliers removed
+z.paired(flat_in_rm$FlatInBT, flat_in_rm$FlatInAT)
+z.paired(flat_cross_rm$FlatCrossBT, flat_cross_rm$FlatCrossAT)
+```
+
 
 Compare the beam centre shift
 ```{r}
-boxplot(rand_6x$MPC_Distance, rand_6x$Calibrated_Distance)
+
+boxplot(recent6x$MPC_Distance, recent6x$Calibrated_Distance, recent10x$MPC_Distance, recent10x$Calibrated_Distance, recent10fff$MPC_Distance, recent10fff$Calibrated_Distance, main = "Beam Centre Shift (mm)", names = c("6x", "6x", "10x", "10x", "10fff", "10fff"), col = c(2,3,2,3,2,3))
+legend(x = "topleft", legend = c("MPC Distance", "Calibrated Distance"), fill = 2:3, col = c("orange", "red"))
+
+
 z.paired(rand_6x$MPC_Distance, rand_6x$Calibrated_Distance, 0.5, alpha = 0.05)
 
-boxplot(rand_10x$MPC_Distance, rand_10x$Calibrated_Distance)
 z.paired(rand_10x$MPC_Distance, rand_10x$Calibrated_Distance, 0.5, alpha = 0.05)
 
-boxplot(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance)
 z.paired(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance, 0.5, alpha = 0.05)
 
 ```
