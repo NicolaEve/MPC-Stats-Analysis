@@ -699,21 +699,26 @@ plot_mpc_time <- function(df, energy){
 MPC results against time
 ```{r}
 
+#plot_mpc_time(df6x, "6x")
+#plot_mpc_time(df10x, "10x")
+#plot_mpc_time(df10fff, "10xFFF")
+
+
+# clean the df to remove the outliers identified visually from the graphs above
+df10x <- df10x[which(df10x$Output_Change > -5),]
+df10x <- df10x[which(df10x$Uniformity < 10),]
+df10x <- df10x[which(df10x$MPC_Distance < 0.5),]
+
+
+df10fff <- df10fff[which(df10fff$Output_Change<9),]
+df10fff <- df10fff[which(df10fff$Output_Change> -5),]
+df10fff <- df10fff[which(df10fff$Uniformity<40),]
+df10fff <- df10fff[which(df10fff$MPC_Distance<0.5),]
+
 
 plot_mpc_time(df6x, "6x")
 plot_mpc_time(df10x, "10x")
 plot_mpc_time(df10fff, "10xFFF")
-
-# remove outliers so we can build a predictive model
-# this removes everything
-cols = c("Uniformity", "Output_Change", "MPC_Distance")
-df6x_rm_out <- remove_outliers(df6x, c("Uniformity", "Output_Change", "MPC_Distance"))
-df10x_rm_out <- remove_outliers(df10x, cols)
-df10fff_rm_out <- remove_outliers(df10fff, cols)
-
-#plot_mpc_time(df6x_rm_out, "6x")
-#plot_mpc_time(df10x_rm_out, "10x")
-#plot_mpc_time(df10fff_rm_out, "10xFFF")
 ```
 centre shift of MPC and my algorithm - shows bias
 ```{r}
