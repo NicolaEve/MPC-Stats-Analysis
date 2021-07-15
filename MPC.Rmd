@@ -11,20 +11,25 @@ knit at end
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-install packages and set libraries
+install packages
 ```{r, echo = FALSE}
-#install.packages("odbc")
-#install.packages("DBI")
-#install.packages("dplyr")
-#install.packages("fitdistrplus")
-#install.packages("ggplot2")
-#install.packages("qicharts2")
-#install.packages("psych")
-#install.packages("distributions3")
-#install.packages("ggstatsplot")
-#install.packages("forecast")
-#install.packages("qcc")
-#install.packages("lubridate")
+install.packages("odbc")
+install.packages("DBI")
+install.packages("dplyr")
+install.packages("fitdistrplus")
+install.packages("ggplot2")
+install.packages("qicharts2")
+install.packages("psych")
+install.packages("distributions3")
+install.packages("ggstatsplot")
+install.packages("forecast")
+install.packages("qcc")
+install.packages("lubridate")
+install.packages("Metrics")
+```
+
+Set libraries
+```{r}
 library(psych)
 library(qicharts2)
 library(ggplot2)
@@ -36,6 +41,7 @@ library(ggstatsplot)
 library(forecast)
 library(qcc)
 library(lubridate)
+library(Metrics)
 ```
 
 Define functions
@@ -558,22 +564,12 @@ z.paired(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance, 0.5, alpha = 0
 
 Sensitivity and Specificity
 
-true negs/pos will be logged somewhere? not loads so could do manually
-
-```{r}
-sum(df10fff$MPC_Distance > 0.5) + sum(df10fff$MPC_Distance < - 0.5)
-```
 
 add pass/fail columns to the dataframe
 ```{r}
 recent6x <- add_cols(recent6x)
 recent10x <- add_cols(recent10x)
 recent10fff <- add_cols(recent10fff)
-
-# how does it compare to the whole df
-# there's so few failures that it might not be representative to take only the msot recent df
-sum(recent10fff$uniformity_test == "fail")
-(sum(df10fff$Uniformity > 2) + sum(df10fff$Uniformity < -2))/sum(df10fff$Uniformity)
 
 ```
 
@@ -617,6 +613,8 @@ difference(recent10fff)
 Are there a correlations between symmetry, flatness and uniformity, output change?
 With time?
 
+Pearson's test for correlation
+
 ```{r}
 Symm_Flat_Rel(recent6x)
 ```
@@ -635,6 +633,8 @@ plot_cor(recent10fff, energy = "10xFFF")
 plot_cor(rm_out_10fff, energy = "10xFFF (outliers removed)")
 
 ```
+
+Time series
 
 Plot the flatness and symmetry against time
 ```{r}
@@ -664,8 +664,9 @@ plot_time(rm_out_10fff, "10xFFF (outliers removed)")
 
 ```
 
+MPC results time series
 
-plot the beam output change, uniformity and centre shift over time
+Plot the beam output change, uniformity and centre shift over time
 ```{r}
 
 plot_mpc_time <- function(df, energy){
@@ -744,23 +745,126 @@ plot_centre_shift(recent10fff, "10xFFF")
 
 Predicting future values
 
-Forecasting with ARIMA
+Set up the training and testing dfs
+Set up the UCL, LCL, CL
 ```{r}
-# Fit and forecast with auto.arima()
-# make it a time series 
-# frequency is the number of observations per cycle
-TS6x = ts(recent6x, frequency = 5)
-autoarima_fit = auto.arima(TS6x[,7]) # number specifies the data column
 
-# h is the number of points to predict ahead
-#autoArimaFit <- auto.arima(recent6x)
-plot(forecast(autoarima_fit, h=20))
+training_df <- function(df){
+  # first 85% of the data is training
+  return(head(df, round(nrow(df) * 0.85)))
+}
 
-# Fit and forecast with Arima()
-#arimaFit <- Arima(recent6x,order=c(3,1,0))
-#plot(forecast(arimafit,h=20))
+testing_df <- function(df){
+  # last 15% of the data is testing
+  return(tail(df, nrow(df) - round(nrow(df) * 0.85)))
+}
+
+training_df6x <- training_df(df6x)
+testing_df6x <- testing_df(df6x)
+
+
+# control limits
+limits <- function(dfcol){
+
+  the_Mean <- mean(dfcol)
+  the_mR <- mean(abs(diff(dfcol)))
+  the_Sigma <- the_mR/1.128
+  the_LCL <- the_Mean - 3 * the_Sigma
+  the_UCL <- the_Mean + 3 * the_Sigma
+  
+  return(c(the_Mean, the_LCL, the_UCL))
+}
+
+
 ```
 
+
+Forecasting with ARIMA
+```{r}
+pred_uniformity_6x <- auto.arima(training_df6x[,8])
+# Fit and forecast with auto.arima()
+
+# frequency is the number of observations per cycle
+# number specifies the data column
+
+# h is the number of points to predict ahead
+fvals <- forecast(pred_uniformity_6x, h=nrow(testing_df6x))
+print(fvals)
+plot(fvals)
+
+
+# root mean squared error comparing the actual to the predicted
+# favsl$mean = mean of the prediction intervals
+error <- rmse(testing_df6x$Uniformity, fvals$mean)
+abs_error <- mae(testing_df6x$Uniformity, fvals$mean)
+print(error)
+print(abs_error)
+
+
+ 
+uniformdf <- data.frame(
+  actual = testing_df6x$Uniformity,
+  predicted = fvals$mean,
+  CL = limits(training_df6x$Uniformity)[1] ,
+  LCL <- limits(training_df6x$Uniformity)[2],
+  UCL <- limits(training_df6x$Uniformity)[3])
+
+# add a state pass/warning/fail to the df
+f <- `$<-`
+
+# uniformity
+uniformdf <- f(uniformdf, "pred_state", "pass")
+uniformdf$pred_state[uniformdf$predicted <= -2] <- "fail"
+uniformdf$pred_state[uniformdf$predicted>2] <- "fail"
+uniformdf$pred_state[uniformdf$predicted<uniformdf$UCL....limits.training_df6x.Uniformity..3. & uniformdf$predicted>uniformdf$LCL....limits.training_df6x.Uniformity..2.] <- "warning"
+
+uniformdf <- f(uniformdf, "actual_state", "pass")
+uniformdf$actual_state[uniformdf$actual <= -2] <- "fail"
+uniformdf$actual_state[uniformdf$actual>2] <- "fail"
+uniformdf$actual_state[uniformdf$actual<uniformdf$UCL....limits.training_df6x.Uniformity..3. & uniformdf$actual>uniformdf$LCL....limits.training_df6x.Uniformity..2.] <- "warning"
+
+
+
+
+av_accuracy <- function(df, state){
+  
+  if(state == "fail"){ 
+    non_state_1 <- "pass"
+    non_state_2 <- "warning"}
+  
+   if(state == "warning"){ 
+     non_state_1 <- "pass"
+     non_state_2 <- "fail"}
+  
+   if(state == "pass"){ 
+     non_state_1 <- "warning"
+     non_state_2 <- "fail"}
+  
+  true_pos <-  sum(df$pred_state == state & df$actual_state == state)
+  
+  true_neg <- sum(df$pred_state == non_state_1 & df$actual_state == non_state_1) + sum(df$pred_state == non_state_2 & df$actual_state == non_state_2)
+  
+  false_pos <- sum(df$pred_state == state & df$actual_state != state)
+  
+  false_neg <- sum(df$pred_state == non_state_1 & df$actual_state != non_state_1) + sum(df$pred_state == non_state_2 & df$actual_state != non_state_2)
+  
+  acc <- (true_pos + true_neg) / (true_pos+true_neg+false_pos+false_neg)
+  
+  av_acc <- acc / nrow(df)
+  return(av_acc)
+}
+
+av_accuracy(uniformdf, "warning")
+av_accuracy(uniformdf, "pass")
+av_accuracy(uniformdf, "fail")
+
+```
+```{r}
+plot(uniformdf$predicted) +
+  plot(uniformdf$actual) + 
+  plot(uniformdf$LCL....limits.training_df6x.Uniformity..2.)
+
+```
 
 Polynomial regression on this year for beam output change  -predicting this can help management by forecasting when it will need to be reset so we can plan around this.
 
