@@ -778,51 +778,94 @@ limits <- function(dfcol){
 
 ```
 
+```{r}
+fit <- auto.arima(training_df6x$Uniformity)
+pred <- forecast(fit, 5)
+pred$mean
+5%%5
+```
+
 
 Forecasting with ARIMA
+
 ```{r}
-pred_uniformity_6x <- auto.arima(training_df6x[,8])
-# Fit and forecast with auto.arima()
+# set up a vector which calcs the limits iteratively for the actual uniformity values
 
-# frequency is the number of observations per cycle
-# number specifies the data column
+cl <- c()
+lcl <- c()
+ucl <- c()
 
-# h is the number of points to predict ahead
-fvals <- forecast(pred_uniformity_6x, h=nrow(testing_df6x))
-print(fvals)
-plot(fvals)
+actual <- c(training_df6x$Uniformity)
+predicted <- c()
+trend <- c()
 
+for (n in 1:nrow(testing_df6x)){
+  
+  # add the actual value
+  actual <- c(actual, testing_df6x$Uniformity[n])
+  
+  cl <- c(cl, limits(actual)[1])
+  lcl <- c(lcl, limits(actual)[2])
+  ucl <- c(ucl, limits(actual)[3])
+  
+  fit <- auto.arima(actual)
+  pred <- forecast(fit, 1)
+  
+  if ( (n-1) %% 5 == 0){
+  pred_5 <- forecast(fit, 5)
+  trend <- c(trend, pred_5$mean)
+  }
+  
+  predicted <- c(predicted, pred$mean)
+  
+}
 
+```
+
+```{r}
+uniformdf <- data.frame(actual_val <- c(testing_df6x$Uniformity),
+                        central <- cl,
+                        lower <- lcl,
+                        upper <- ucl,
+                        one_step <- predicted,
+                        five_step = trend[1:148],
+                        Date <- c(testing_df6x$QA_Date))
+
+```
+
+```{r}
+ggplot(uniformdf, aes(x = Date)) +
+  geom_point(aes(y = actual_val), color = "blue") +
+  geom_point(aes(y = one_step), color = "red") +
+  geom_point(aes(y = lcl), color = "yellow") +
+   geom_point(aes(y = ucl), color = "yellow") +
+  geom_point(aes(y = five_step), color = "green")
+
+```
+
+```{r}
+   
 # root mean squared error comparing the actual to the predicted
-# favsl$mean = mean of the prediction intervals
-error <- rmse(testing_df6x$Uniformity, fvals$mean)
-abs_error <- mae(testing_df6x$Uniformity, fvals$mean)
+error <- rmse(uniformdf$actual_val, uniformdf$one_step)
+abs_error <- mae(uniformdf$actual_val, uniformdf$one_step)
 print(error)
 print(abs_error)
 
 
- 
-uniformdf <- data.frame(
-  actual = testing_df6x$Uniformity,
-  predicted = fvals$mean,
-  CL = limits(training_df6x$Uniformity)[1] ,
-  LCL <- limits(training_df6x$Uniformity)[2],
-  UCL <- limits(training_df6x$Uniformity)[3])
 
 # add a state pass/warning/fail to the df
 f <- `$<-`
 
 # uniformity
-uniformdf <- f(uniformdf, "pred_state", "pass")
-uniformdf$pred_state[uniformdf$predicted <= -2] <- "fail"
-uniformdf$pred_state[uniformdf$predicted>2] <- "fail"
-uniformdf$pred_state[uniformdf$predicted<uniformdf$UCL....limits.training_df6x.Uniformity..3. & uniformdf$predicted>uniformdf$LCL....limits.training_df6x.Uniformity..2.] <- "warning"
+uniformdf <- f(uniformdf, "pred_state", "warning")
+uniformdf$pred_state[uniformdf$one_step <= -2] <- "fail"
+uniformdf$pred_state[uniformdf$one_step>2] <- "fail"
+uniformdf$pred_state[uniformdf$one_step<uniformdf$upper & uniformdf$one_step>uniformdf$lower] <- "pass"
 
-uniformdf <- f(uniformdf, "actual_state", "pass")
-uniformdf$actual_state[uniformdf$actual <= -2] <- "fail"
-uniformdf$actual_state[uniformdf$actual>2] <- "fail"
-uniformdf$actual_state[uniformdf$actual<uniformdf$UCL....limits.training_df6x.Uniformity..3. & uniformdf$actual>uniformdf$LCL....limits.training_df6x.Uniformity..2.] <- "warning"
-
+uniformdf <- f(uniformdf, "actual_state", "warning")
+uniformdf$actual_state[uniformdf$actual_val <= -2] <- "fail"
+uniformdf$actual_state[uniformdf$actual_val>2] <- "fail"
+uniformdf$actual_state[uniformdf$actual_val<uniformdf$upper & uniformdf$actual_val>uniformdf$lower] <- "pass"
 
 
 
@@ -859,12 +902,7 @@ av_accuracy(uniformdf, "pass")
 av_accuracy(uniformdf, "fail")
 
 ```
-```{r}
-plot(uniformdf$predicted) +
-  plot(uniformdf$actual) + 
-  plot(uniformdf$LCL....limits.training_df6x.Uniformity..2.)
 
-```
 
 Polynomial regression on this year for beam output change  -predicting this can help management by forecasting when it will need to be reset so we can plan around this.
 
