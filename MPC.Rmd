@@ -791,6 +791,9 @@ Forecasting with ARIMA
 ```{r}
 # set up a vector which calcs the limits iteratively for the actual uniformity values
 
+forecating_df <- function(dfcol){
+  
+
 cl <- c()
 lcl <- c()
 ucl <- c()
@@ -817,6 +820,8 @@ for (n in 1:nrow(testing_df6x)){
   }
   
   predicted <- c(predicted, pred$mean)
+  
+}
   
 }
 
@@ -852,7 +857,6 @@ print(error)
 print(abs_error)
 
 
-
 # add a state pass/warning/fail to the df
 f <- `$<-`
 
@@ -866,7 +870,6 @@ uniformdf <- f(uniformdf, "actual_state", "warning")
 uniformdf$actual_state[uniformdf$actual_val <= -2] <- "fail"
 uniformdf$actual_state[uniformdf$actual_val>2] <- "fail"
 uniformdf$actual_state[uniformdf$actual_val<uniformdf$upper & uniformdf$actual_val>uniformdf$lower] <- "pass"
-
 
 
 av_accuracy <- function(df, state){
@@ -904,85 +907,6 @@ av_accuracy(uniformdf, "fail")
 ```
 
 
-Polynomial regression on this year for beam output change  -predicting this can help management by forecasting when it will need to be reset so we can plan around this.
 
-```{r}
-recent6x$index <- 1:length(recent6x$Output_Change)
-
-fit <- lm(Output_Change ~ poly(index , 56, raw=TRUE), recent6x)  
-fit4 <- lm(Output_Change ~ poly(index , 14, raw=TRUE), recent6x)
-
-
-plot(recent6x$Output_Change, main="plot", xaxt="n")
-tck <- c(1, 25, 50, 75)
-axis(1, tck, labels=FALSE)
-mtext(recent6x$QA_Date[tck], 1, 1, at=tck)
-lines(fit$fitted.values, col=3, lwd=2)
-lines(fit4$fitted.values, col=2, lwd=2)
-legend("topleft", c("cubic", "quartic"), lwd=2, col=3:2)
-```
-
-
-SPC charts for the beam centre shift over time;
-the flatness and symmetry over time
-
-6x
-```{r}
-
-qic(recent6x$Output_Change, x = recent6x$QA_Date, chart = 'xbar')
-qic(SymmInAT, x = QA_Date, data = recent6x, chart = 'xbar')
-qic(recent6x$SymmInAT, x = recent6x$QA_Date, chart = 'mr')
-
-```
-
-Set up the data as grouped by week
-```{r}
-# grouped by week
-# numbered from start of the year
-recent6x$week <- week(recent6x$QA_Date) 
-recent10x$week <- week(recent10x$QA_Date) 
-recent10fff$week <- week(recent10fff$QA_Date) 
-```
-
-Function to plot the spc charts
-```{r}
-
-plot_spc <- function(df){
-
-SymmIn <- qcc.groups(df$SymmInAT, df$week)
-qcc(SymmIn, type = "R")
-qcc(SymmIn, type = "xbar")
-
-SymmCross <- qcc.groups(df$SymmCrossAT, df$week)
-qcc(SymmCross, type = "R")
-qcc(SymmCross, type = "xbar")
-
-FlatIn <- qcc.groups(df$FlatInAT, df$week)
-qcc(FlatIn, type = "R")
-qcc(FlatIn, type = "xbar")
-
-FlatCross <- qcc.groups(df$FlatCrossAT, df$week)
-qcc(FlatCross, type = "R")
-qcc(FlatCross, type = "xbar")
-
-Uniformity <- qcc.groups(df$Uniformity, df$week)
-qcc(Uniformity, type = "R")
-qcc(Uniformity, type = "xbar")
-
-OutputChange <- qcc.groups(df$Output_Change, df$week)
-qcc(OutputChange, type = "R")
-qcc(OutputChange, type = "xbar")
-qcc(OutputChange, type = "S")
-
-}
-
-```
-
-plot for each energy
-```{r}
-plot_spc(recent6x)
-plot_spc(recent10x)
-plot_spc(recent10fff)
-```
 
 
