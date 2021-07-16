@@ -762,6 +762,11 @@ testing_df <- function(df){
 training_df6x <- training_df(df6x)
 testing_df6x <- testing_df(df6x)
 
+training_df10x <- training_df(df10x)
+testing_df10x <- testing_df(df10x)
+
+training_df10fff <- training_df(df10fff)
+testing_df10fff <- testing_df(df10fff)
 
 # control limits
 limits <- function(dfcol){
@@ -822,7 +827,7 @@ so should I try to implement one of those?
 ```{r}
 # set up a vector which calcs the limits iteratively for the actual uniformity values
 
-forecating_df <- function(trainingdf, testingdf, datecol, threshold){
+forecating_df <- function(trainingdf, testingdf, datecol, threshold, colname, energy){
   
 cl <- c()
 lcl <- c()
@@ -864,18 +869,24 @@ for (n in 1:length(testingdf)){
   
   
   # plot values
+  colours = c("Actual Values" = "red", "Control Limits" = "yellow", "1 Step Prediction" = "blue", "5 Step Prediction" = "green")
   print(ggplot(arima_df, aes(x = Date)) +
-  geom_point(aes(y = actual_val), color = "blue") +
-  geom_point(aes(y = one_step), color = "red") +
-  geom_point(aes(y = lcl), color = "yellow") +
-  geom_point(aes(y = ucl), color = "yellow") +
-  geom_point(aes(y = five_step), color = "green"))
+  geom_line(aes(y = actual_val, color = "Actual Values"), size = 1.2) +
+  geom_line(aes(y = one_step, color = "1 Step Prediction"), size = 1.2) +
+  geom_line(aes(y = lcl, color = "Control Limits"), size = 1.2) +
+  geom_line(aes(y = ucl, color = "Control Limits"), size = 1.2) +
+  geom_line(aes(y = five_step, color = "5 Step Prediction"), size = 1.2) +
+    labs(title = energy,
+         x = "Date",
+         y = colname,
+         color = "legend") +
+      scale_color_manual(values = colours))
   
   # calculate errors
   # root mean squared error comparing the actual to the predicted
   error <- rmse(arima_df$actual_val, arima_df$one_step)
   abs_error <- mae(arima_df$actual_val, arima_df$one_step)
-  cat("Root mean squared error is ", error)
+  cat("  Root mean squared error is ", error)
   cat("  Absolute error is ", abs_error)
   
   
@@ -896,8 +907,6 @@ for (n in 1:length(testingdf)){
   # calculate average accuracy
   average_accuracy <- av_accuracy(arima_df, "warning")
   cat("  Average accuracy is ", average_accuracy)
-  
-  return(arima_df)
 
 }
   
@@ -905,12 +914,46 @@ for (n in 1:length(testingdf)){
 
 ```
 
+Perform the forecast - on all MPC values
 ```{r}
-uniformdf <- forecating_df(training_df6x$Uniformity, testing_df6x$Uniformity, testing_df6x$QA_Date, 2)
+forecating_df(training_df6x$Uniformity, testing_df6x$Uniformity, testing_df6x$QA_Date, 2, "Uniformity (%)", "6x")
+
+forecating_df(training_df10x$Uniformity, testing_df10x$Uniformity, testing_df10x$QA_Date, 2, "Uniformity (%)", "10x")
+
+forecating_df(training_df10fff$Uniformity, testing_df10fff$Uniformity, testing_df10fff$QA_Date, 2, "Uniformity (%)", "10xFFF")
+
+forecating_df(training_df6x$Output_Change, testing_df6x$Output_Change, testing_df6x$QA_Date, 2, "Output Change (%)", "6x")
+
+forecating_df(training_df10x$Output_Change, testing_df10x$Output_Change, testing_df10x$QA_Date, 2, "Output Change (%)", "10x")
+
+forecating_df(training_df10fff$Output_Change, testing_df10fff$Output_Change, testing_df10fff$QA_Date, 2, "Output Change (%)", "10xFFF")
+
+forecating_df(training_df6x$MPC_Distance, testing_df6x$MPC_Distance, testing_df6x$QA_Date, 0.5, "Beam Centre Shift (mm)", "6x")
+
+forecating_df(training_df10x$MPC_Distance, testing_df10x$MPC_Distance, testing_df10x$QA_Date, 0.5, "Beam Centre Shift (mm)", "10x")
+
+forecating_df(training_df10fff$MPC_Distance, testing_df10fff$MPC_Distance, testing_df10fff$QA_Date, 0.5, "Beam Centre Shift (mm)", "10xFFF")
 ```
 
 
 
+```{r}
+forecating_df(training_df6x$SymmInAT, testing_df6x$SymmInAT, testing_df6x$QA_Date, 3, "Symmetry Inline", "6x")
+forecating_df(training_df10x$SymmInAT, testing_df10x$SymmInAT, testing_df10x$QA_Date, 3, "Symmetry Inline", "10x")
+forecating_df(training_df10fff$SymmInAT, testing_df10fff$SymmInAT, testing_df10fff$QA_Date, 3, "Symmetry Inline", "10xFFF")
+
+forecating_df(training_df6x$SymmCrossAT, testing_df6x$SymmCrossAT, testing_df6x$QA_Date, 3, "Symmetry Crossline", "6x")
+forecating_df(training_df10x$SymmCrossAT, testing_df10x$SymmCrossAT, testing_df10x$QA_Date, 3, "Symmetry Crossline", "10x")
+forecating_df(training_df10fff$SymmcrossAT, testing_df10fff$SymmCrossAT, testing_df10fff$QA_Date, 3, "Symmetry Crossline", "10xFFF")
+
+forecating_df(training_df6x$FlatInAT, testing_df6x$FlatInAT, testing_df6x$QA_Date, 106, "Flatness Inline", "6x")
+forecating_df(training_df10x$FlatInAT, testing_df10x$FlatInAT, testing_df10x$QA_Date, 106, "Flatness Inline", "10x")
+forecating_df(training_df10fff$FlatInAT, testing_df10fff$FlatInAT, testing_df10fff$QA_Date, 106, "Flatness Inline", "10xFFF")
+
+forecating_df(training_df6x$FlatCorssAT, testing_df6x$FlatCrossAT, testing_df6x$QA_Date, 106, "Flatness Crossline", "6x")
+forecating_df(training_df10x$FlatCrossAT, testing_df10x$FlatCrossAT, testing_df10x$QA_Date, 106, "Flatness Crossline", "10x")
+forecating_df(training_df10fff$FlatCrossAT, testing_df10fff$FlatCrossAT, testing_df10fff$QA_Date, 106, "Flatness Crossline", "10xFFF")
+```
 
 
 
