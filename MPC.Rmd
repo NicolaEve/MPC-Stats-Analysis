@@ -956,4 +956,37 @@ forecating_df(training_df10fff$FlatCrossAT, testing_df10fff$FlatCrossAT, testing
 ```
 
 
+Predict the next values - include all data in the model but only plot for a few weeks
+```{r}
+
+actual <- df6x$Uniformity
+  
+cl <- limits(actual)[1]
+lcl <- limits(actual)[2]
+ucl <- limits(actual)[3]
+
+fit <- auto.arima(actual)
+pred <- forecast(fit, 1)
+
+
+pred_5 <- forecast(fit, 5)
+
+last_date = df6x$QA_Date[nrow(df6x)]
+next_day <- last_date + 24*60*60
+
+next_2 <- next_day + 24*60*60
+next_3 <- next_2 + 24*60*60
+next_4 <- next_3 + 24*60*60
+next_5 <- next_4 + 24*60*60
+
+ggplot(tail(df6x, n=15)) +
+  geom_line(aes(x = QA_Date, y = Uniformity), color = "blue") +
+  geom_point(aes(x = next_day, y = pred$mean), color = "red") +
+  geom_point(aes(x = next_day, y = pred_5$mean[1]), color = "yellow") +
+  geom_point(aes(x = next_2, y = pred_5$mean[2]), color = "yellow") +
+geom_point(aes(x = next_3, y = pred_5$mean[3]), color = "yellow") +
+  geom_point(aes(x = next_4, y = pred_5$mean[4]), color = "yellow")+
+  geom_point(aes(x = next_5, y = pred_5$mean[5]), color = "yellow")
+```
+
 
