@@ -13,19 +13,19 @@ knitr::opts_chunk$set(echo = TRUE)
 
 install packages
 ```{r, echo = FALSE}
-install.packages("odbc")
-install.packages("DBI")
-install.packages("dplyr")
-install.packages("fitdistrplus")
-install.packages("ggplot2")
-install.packages("qicharts2")
-install.packages("psych")
-install.packages("distributions3")
-install.packages("ggstatsplot")
-install.packages("forecast")
-install.packages("qcc")
-install.packages("lubridate")
-install.packages("Metrics")
+#install.packages("odbc")
+#install.packages("DBI")
+#install.packages("dplyr")
+#install.packages("fitdistrplus")
+#install.packages("ggplot2")
+#install.packages("qicharts2")
+#install.packages("psych")
+#install.packages("distributions3")
+#install.packages("ggstatsplot")
+#install.packages("forecast")
+#install.packages("qcc")
+#install.packages("lubridate")
+#install.packages("Metrics")
 ```
 
 Set libraries
@@ -318,43 +318,275 @@ add_cols <- function(df){
 }
 
 
-```
+# plot the symmetry and flatness over time
+plot_time <- function(df, energy){
+  colours <- c("Inline" = "blue", "Crossline" = "yellow")
+  
+print(ggplot(df, aes(x = QA_Date)) +
+  geom_point(aes(y = FlatInAT, color = "Inline")) + 
+  geom_point(aes(y = FlatCrossAT, color = "Crossline")) +
+  geom_smooth(aes(x = QA_Date, y = FlatInAT, color = "Inline"), method = 'loess') +
+   geom_smooth(aes(x = QA_Date, y = FlatCrossAT, color = "Crossline"), method = 'loess') +
+  labs(title = paste("Flatness", energy)))
 
 
-max difference function
-```{r}
-
-difference <- function(df){
-  
-  # uniformity
-cat(" Max difference symmetry inline and uniformity is ", max( abs(df$SymmInAT - df$Uniformity)))
-  
-  cat(" Max differencesymmetry crossline and uniformity is ", max( abs(df$SymmCrossAT - df$Uniformity)))
-  
-  cat(" Max difference flatneess inline and uniformity is ", max( abs( (df$FlatInAT-100) - df$Uniformity)))
-  
-  cat(" Max difference flatness crossline and uniformity is ", max( abs( (df$FlatCrossAT-100) - df$Uniformity)))
-  
-  
-  
-  # output change
-  cat(" Max difference symmetry inline and output change is ", max( abs(df$SymmInAT - df$Output_Change)))
-  
-  cat(" Max difference symmetry crossline and output change is ", max( abs(df$SymmCrossAT - df$Output_Change)))
-  
-  cat(" Max difference flatness inline and output change is ", max( abs( (df$FlatInAT-100) - df$Output_Change)))
-  
-  cat(" Max difference flatness crossline and output change is ", max( abs( (df$FlatCrossAT-100) - df$Output_Change)))
-  
-  
-  
-  # beam centre shift
-  cat(" Max difference beam centre shift is ", max( abs(df$MPC_Distance - df$Calibrated_Distance)))
-
-  
+print(ggplot(df, aes(x = QA_Date)) +
+  geom_point(aes(y = SymmInAT, color = "Inline")) +
+  geom_point(aes(y = SymmCrossAT, color = "Crossline")) +
+    geom_smooth(aes(x = QA_Date, y = SymmInAT, color = "Inline"), method = 'loess') +
+   geom_smooth(aes(x = QA_Date, y = SymmCrossAT, color = "Crossline"), method = 'loess') +
+  labs(title = paste("Symmetry", energy)))
 }
 
 
+# plot the MPC results over time
+
+plot_mpc_time <- function(df, energy){
+  
+  print(ggplot(df, aes(QA_Date, Output_Change)) +
+  geom_point() +
+    #geom_smooth(aes(x = QA_Date, y = Output_Change), method = "gam") +
+  xlab("QA Date") +
+  ylab("Output Change") +
+  ggtitle(paste("Output Changes against Time", energy)))
+  
+    print(ggplot(df, aes(QA_Date, Uniformity)) +
+  geom_point() +
+    #geom_smooth(aes(x = QA_Date, y = Uniformity), method = "gam") +
+  xlab("QA Date") +
+  ylab("Uniformity") +
+  ggtitle(paste("Uniformity against Time", energy)))
+    
+    print(ggplot(df, aes(QA_Date, MPC_Distance)) +
+  geom_point() +
+    #geom_smooth(aes(x = QA_Date, y = MPC_Distance), method = "gam") +
+  xlab("QA Date") +
+  ylab("Beam Centre Shift (mm)") +
+  ggtitle(paste("Centre shift against Time", energy)))
+
+}
+
+
+# plot the MPC reported centre shift and my algorithm against time
+plot_centre_shift <- function(df, energy){
+  colors <- c("MPC" = "blue", "Calibrated" = "red")
+  
+    print(ggplot(df, aes(x = QA_Date)) +
+  geom_point(aes(y = MPC_Distance, color = "MPC")) +
+    geom_point(aes(y = Calibrated_Distance, color = "Calibrated")) +
+    geom_smooth(aes(x = QA_Date, y = MPC_Distance, color = "MPC"), method = "loess") +
+    geom_smooth(aes(x = QA_Date, y = Calibrated_Distance, color = "Calibrated"), method = "loess") +
+  xlab("QA Date") +
+  ylab("Beam Centre Shift (mm)") +
+  ggtitle(paste("Centre shift against Time", energy)))
+}
+
+
+
+# set up the training and testing datasets
+
+training_df <- function(df){
+  # first 85% of the data is training
+  return(head(df, round(nrow(df) * 0.85)))
+}
+
+testing_df <- function(df){
+  # last 15% of the data is testing
+  return(tail(df, nrow(df) - round(nrow(df) * 0.85)))
+}
+
+
+# SPC XmR control limits
+limits <- function(dfcol){
+
+  the_Mean <- mean(dfcol)
+  the_mR <- mean(abs(diff(dfcol)))
+  the_Sigma <- the_mR/1.128
+  the_LCL <- the_Mean - 3 * the_Sigma
+  the_UCL <- the_Mean + 3 * the_Sigma
+  
+  return(c(the_Mean, the_LCL, the_UCL))
+}
+
+
+# average accuracy
+av_accuracy <- function(df, state){
+  
+  if(state == "fail"){ 
+    non_state_1 <- "pass"
+    non_state_2 <- "warning"}
+  
+   if(state == "warning"){ 
+     non_state_1 <- "pass"
+     non_state_2 <- "fail"}
+  
+   if(state == "pass"){ 
+     non_state_1 <- "warning"
+     non_state_2 <- "fail"}
+  
+  true_pos <-  sum(df$pred_state == state & df$actual_state == state)
+  
+  true_neg <- sum(df$pred_state == non_state_1 & df$actual_state == non_state_1) + sum(df$pred_state == non_state_2 & df$actual_state == non_state_2)
+  
+  false_pos <- sum(df$pred_state == state & df$actual_state != state)
+  
+  false_neg <- sum(df$pred_state == non_state_1 & df$actual_state != non_state_1) + sum(df$pred_state == non_state_2 & df$actual_state != non_state_2)
+  
+  acc <- (true_pos + true_neg) / (true_pos+true_neg+false_pos+false_neg)
+  
+  av_acc <- acc / nrow(df)
+  return(av_acc)
+}
+
+
+# predicting values - comparing prediction from training to known values from testing
+# set up a vector which calcs the limits iteratively for the actual uniformity values
+
+forecating_df <- function(trainingdf, testingdf, datecol, threshold, colname, energy){
+  
+cl <- c()
+lcl <- c()
+ucl <- c()
+
+actual <- c(trainingdf)
+predicted <- c()
+trend <- c()
+threshold_line <- c()
+
+# iteratively construct the dataframe from predicted values
+for (n in 1:length(testingdf)){
+  # add the actual value
+  actual <- c(actual, testingdf[n])
+  
+  cl <- c(cl, limits(actual)[1])
+  lcl <- c(lcl, limits(actual)[2])
+  ucl <- c(ucl, limits(actual)[3])
+  threshold_line <- c(threshold_line, threshold)
+  
+  fit <- auto.arima(actual)
+  pred <- forecast(fit, 1)
+  
+  if ( (n-1) %% 5 == 0){
+  pred_5 <- forecast(fit, 5)
+  trend <- c(trend, pred_5$mean)
+  }
+  
+  predicted <- c(predicted, pred$mean)
+  
+}
+  
+  
+  arima_df <- data.frame(actual_val <- c(testingdf),
+                        central <- cl,
+                        lower <- lcl,
+                        upper <- ucl,
+                        one_step <- predicted,
+                        five_step <- trend[1:length(testingdf)],
+                        Date <- c(datecol))
+  
+  
+  # plot values
+  colours = c("Actual Values" = "black", "Control Limits" = "blue", "1 Step Prediction" = "orange", "5 Step Prediction" = "green", "Average" = "yellow", "Threshold" = "red")
+  
+  print(ggplot(arima_df, aes(x = Date)) +
+  geom_line(aes(y = actual_val, color = "Actual Values"), size = 1.05) +
+  geom_line(aes(y = one_step, color = "1 Step Prediction"), size = 1.05) +
+  geom_line(aes(y = lcl, color = "Control Limits"), size = 1.05) +
+  geom_line(aes(y = ucl, color = "Control Limits"), size = 1.1) +
+    geom_line(aes(y = cl, color = "Average"), size = 1.05) +
+     geom_line(aes(y = threshold_line, color = "Threshold"), size = 1.05) +
+  geom_line(aes(y = five_step, color = "5 Step Prediction"), size = 1.05) +
+    labs(title = energy,
+         x = "Date",
+         y = colname,
+         color = "legend") +
+      scale_color_manual(values = colours))
+  
+  # calculate errors
+  # root mean squared error comparing the actual to the predicted
+  error <- rmse(arima_df$actual_val, arima_df$one_step)
+  abs_error <- mae(arima_df$actual_val, arima_df$one_step)
+  cat("  Root mean squared error is ", error)
+  cat("  Absolute error is ", abs_error)
+  
+  
+  # add a state pass/warning/fail to the df
+  f <- `$<-`
+  
+  # uniformity
+  arima_df <- f(arima_df, "pred_state", "warning")
+  arima_df$pred_state[arima_df$one_step <= -threshold] <- "fail"
+  arima_df$pred_state[arima_df$one_step>threshold] <- "fail"
+  arima_df$pred_state[arima_df$one_step<arima_df$upper & arima_df$one_step>arima_df$lower] <- "pass"
+  
+  arima_df <- f(arima_df, "actual_state", "warning")
+  arima_df$actual_state[arima_df$actual_val <= -threshold] <- "fail"
+  arima_df$actual_state[arima_df$actual_val>threshold] <- "fail"
+  arima_df$actual_state[arima_df$actual_val<arima_df$upper & arima_df$actual_val>arima_df$lower] <- "pass"
+  
+  # calculate average accuracy
+  average_accuracy <- av_accuracy(arima_df, "warning")
+  cat("  Average accuracy is ", average_accuracy)
+
+}
+
+
+# predicting actual future values and plotting
+# limits are calculated with the most up to date info from the database; hence are recalculated and the sysetm is relearning
+predict_future <- function(df, energy, cols = names(df), threshold){
+  colours <- c("Actual Values" = "black", "Predicted Values" = "blue", "Control Limits" = "yellow", "Average" = "orange", "Threshold" = "red")
+  for (col in cols){
+    
+  actual <- df[[col]]
+
+  fit <- auto.arima(actual)
+  pred <- forecast(fit, 1)
+  
+  pred_5 <- forecast(fit, 5)
+  
+  last_date = df$QA_Date[nrow(df)]
+  next_day <- last_date + 24*60*60
+  
+  next_2 <- next_day + 24*60*60
+  next_3 <- next_2 + 24*60*60
+  next_4 <- next_3 + 24*60*60
+  next_5 <- next_4 + 24*60*60
+  
+  cl <- c()
+  lcl <- c()
+  ucl <- c()
+  limit <- c()
+  numpoints = 20
+  for (n in numpoints){
+    cl <- c(cl, limits(actual)[1])
+    lcl <- c(lcl, limits(actual)[2])
+    ucl <- c(ucl, limits(actual)[3])
+    limit <- c(threshold, limit)
+  }
+  
+  reduced_df <- tail(df, n = numpoints)
+  reduced_actual <- reduced_df[[col]]
+  
+ print(ggplot(reduced_df) +
+    geom_line(aes(x = QA_Date, y = reduced_actual, color = "Actual Values")) +
+    geom_line(aes(x = QA_Date, y = cl, color = "Average")) +
+    geom_line(aes(x = QA_Date, y = lcl, color = "Control Limits")) +
+    geom_line(aes(x = QA_Date, y = ucl, color = "Control Limits")) +
+      geom_line(aes(x = QA_Date, y = limit, color = "Threshold")) +
+    geom_point(aes(x = next_day, y = pred$mean, color = "Predicted Values")) +
+    geom_point(aes(x = next_day, y = pred_5$mean[1], color = "Predicted Values")) +
+    geom_point(aes(x = next_2, y = pred_5$mean[2], color = "Predicted Values")) +
+  geom_point(aes(x = next_3, y = pred_5$mean[3], color = "Predicted Values")) +
+    geom_point(aes(x = next_4, y = pred_5$mean[4], color = "Predicted Values")) +
+    geom_point(aes(x = next_5, y = pred_5$mean[5], color = "Predicted Values")) + 
+    labs( title = energy,
+          x = "QA Date",
+          y = col,
+          color = "legend") +
+      scale_color_manual(values = colours))
+ 
+  }   
+}
 ```
 
 
@@ -590,26 +822,6 @@ calc_sens_spec(recent10fff)
 ```
 
 
-Difference between symmetry and uniformity
-Compare how much difference there is overall - e.g. all symmetry values are within x% of uniformity
-
-
-6x
-```{r}
-difference(recent6x)
-```
-
-10x
-````{r}
-difference(recent10x)
-```
-
-10fff
-```{r}
-difference(recent10fff)
-```
-
-
 Are there a correlations between symmetry, flatness and uniformity, output change?
 With time?
 
@@ -638,24 +850,6 @@ Time series
 
 Plot the flatness and symmetry against time
 ```{r}
-plot_time <- function(df, energy){
-  colours <- c("Inline" = "blue", "Crossline" = "yellow")
-  
-print(ggplot(df, aes(x = QA_Date)) +
-  geom_point(aes(y = FlatInAT, color = "Inline")) + 
-  geom_point(aes(y = FlatCrossAT, color = "Crossline")) +
-  geom_smooth(aes(x = QA_Date, y = FlatInAT, color = "Inline"), method = 'loess') +
-   geom_smooth(aes(x = QA_Date, y = FlatCrossAT, color = "Crossline"), method = 'loess') +
-  labs(title = paste("Flatness", energy)))
-
-
-print(ggplot(df, aes(x = QA_Date)) +
-  geom_point(aes(y = SymmInAT, color = "Inline")) +
-  geom_point(aes(y = SymmCrossAT, color = "Crossline")) +
-    geom_smooth(aes(x = QA_Date, y = SymmInAT, color = "Inline"), method = 'loess') +
-   geom_smooth(aes(x = QA_Date, y = SymmCrossAT, color = "Crossline"), method = 'loess') +
-  labs(title = paste("Symmetry", energy)))
-}
 
 plot_time(recent6x, "6x")
 plot_time(recent10x, "10x")
@@ -664,38 +858,6 @@ plot_time(rm_out_10fff, "10xFFF (outliers removed)")
 
 ```
 
-MPC results time series
-
-Plot the beam output change, uniformity and centre shift over time
-```{r}
-
-plot_mpc_time <- function(df, energy){
-  
-  print(ggplot(df, aes(QA_Date, Output_Change)) +
-  geom_point() +
-    #geom_smooth(aes(x = QA_Date, y = Output_Change), method = "gam") +
-  xlab("QA Date") +
-  ylab("Output Change") +
-  ggtitle(paste("Output Changes against Time", energy)))
-  
-    print(ggplot(df, aes(QA_Date, Uniformity)) +
-  geom_point() +
-    #geom_smooth(aes(x = QA_Date, y = Uniformity), method = "gam") +
-  xlab("QA Date") +
-  ylab("Uniformity") +
-  ggtitle(paste("Uniformity against Time", energy)))
-    
-    print(ggplot(df, aes(QA_Date, MPC_Distance)) +
-  geom_point() +
-    #geom_smooth(aes(x = QA_Date, y = MPC_Distance), method = "gam") +
-  xlab("QA Date") +
-  ylab("Beam Centre Shift (mm)") +
-  ggtitle(paste("Centre shift against Time", energy)))
-
-
-}
-
-```
 
 MPC results against time
 ```{r}
@@ -721,20 +883,9 @@ plot_mpc_time(df6x, "6x")
 plot_mpc_time(df10x, "10x")
 plot_mpc_time(df10fff, "10xFFF")
 ```
+
 centre shift of MPC and my algorithm - shows bias
 ```{r}
-plot_centre_shift <- function(df, energy){
-  colors <- c("MPC" = "blue", "Calibrated" = "red")
-  
-    print(ggplot(df, aes(x = QA_Date)) +
-  geom_point(aes(y = MPC_Distance, color = "MPC")) +
-    geom_point(aes(y = Calibrated_Distance, color = "Calibrated")) +
-    geom_smooth(aes(x = QA_Date, y = MPC_Distance, color = "MPC"), method = "loess") +
-    geom_smooth(aes(x = QA_Date, y = Calibrated_Distance, color = "Calibrated"), method = "loess") +
-  xlab("QA Date") +
-  ylab("Beam Centre Shift (mm)") +
-  ggtitle(paste("Centre shift against Time", energy)))
-}
 
 plot_centre_shift(recent6x, "6x")
 plot_centre_shift(recent10x, "10x")
@@ -746,19 +897,7 @@ plot_centre_shift(recent10fff, "10xFFF")
 Predicting future values
 
 Set up the training and testing dfs
-Set up the UCL, LCL, CL
 ```{r}
-
-training_df <- function(df){
-  # first 85% of the data is training
-  return(head(df, round(nrow(df) * 0.85)))
-}
-
-testing_df <- function(df){
-  # last 15% of the data is testing
-  return(tail(df, nrow(df) - round(nrow(df) * 0.85)))
-}
-
 training_df6x <- training_df(df6x)
 testing_df6x <- testing_df(df6x)
 
@@ -768,153 +907,15 @@ testing_df10x <- testing_df(df10x)
 training_df10fff <- training_df(df10fff)
 testing_df10fff <- testing_df(df10fff)
 
-# control limits
-limits <- function(dfcol){
-
-  the_Mean <- mean(dfcol)
-  the_mR <- mean(abs(diff(dfcol)))
-  the_Sigma <- the_mR/1.128
-  the_LCL <- the_Mean - 3 * the_Sigma
-  the_UCL <- the_Mean + 3 * the_Sigma
-  
-  return(c(the_Mean, the_LCL, the_UCL))
-}
-
-
 ```
 
-```{r}
-av_accuracy <- function(df, state){
-  
-  if(state == "fail"){ 
-    non_state_1 <- "pass"
-    non_state_2 <- "warning"}
-  
-   if(state == "warning"){ 
-     non_state_1 <- "pass"
-     non_state_2 <- "fail"}
-  
-   if(state == "pass"){ 
-     non_state_1 <- "warning"
-     non_state_2 <- "fail"}
-  
-  true_pos <-  sum(df$pred_state == state & df$actual_state == state)
-  
-  true_neg <- sum(df$pred_state == non_state_1 & df$actual_state == non_state_1) + sum(df$pred_state == non_state_2 & df$actual_state == non_state_2)
-  
-  false_pos <- sum(df$pred_state == state & df$actual_state != state)
-  
-  false_neg <- sum(df$pred_state == non_state_1 & df$actual_state != non_state_1) + sum(df$pred_state == non_state_2 & df$actual_state != non_state_2)
-  
-  acc <- (true_pos + true_neg) / (true_pos+true_neg+false_pos+false_neg)
-  
-  av_acc <- acc / nrow(df)
-  return(av_acc)
-}
-```
 
 
 Forecasting with ARIMA
 
-convert this into a function 
-repeat analysis with other mpc metrics
 
-" The beam output change has high variability over time and is recorded as a nonstationary time-series dataset, which affects the accuracy of the predictive model. Resolution of this problem may require a different predictive model. Examples of possible models include the EWMA model, recurrent neural networks,21 and artificial neural networks,22 which could be investigated in future work."
+Perform the forecast on all MPC values
 
-from the paper using ARIMA and SPC
-so should I try to implement one of those?
-
-```{r}
-# set up a vector which calcs the limits iteratively for the actual uniformity values
-
-forecating_df <- function(trainingdf, testingdf, datecol, threshold, colname, energy){
-  
-cl <- c()
-lcl <- c()
-ucl <- c()
-
-actual <- c(trainingdf)
-predicted <- c()
-trend <- c()
-
-# iteratively construct the dataframe from predicted values
-for (n in 1:length(testingdf)){
-  # add the actual value
-  actual <- c(actual, testingdf[n])
-  
-  cl <- c(cl, limits(actual)[1])
-  lcl <- c(lcl, limits(actual)[2])
-  ucl <- c(ucl, limits(actual)[3])
-  
-  fit <- auto.arima(actual)
-  pred <- forecast(fit, 1)
-  
-  if ( (n-1) %% 5 == 0){
-  pred_5 <- forecast(fit, 5)
-  trend <- c(trend, pred_5$mean)
-  }
-  
-  predicted <- c(predicted, pred$mean)
-  
-}
-  
-  
-  arima_df <- data.frame(actual_val <- c(testingdf),
-                        central <- cl,
-                        lower <- lcl,
-                        upper <- ucl,
-                        one_step <- predicted,
-                        five_step <- trend[1:length(testingdf)],
-                        Date <- c(datecol))
-  
-  
-  # plot values
-  colours = c("Actual Values" = "red", "Control Limits" = "yellow", "1 Step Prediction" = "blue", "5 Step Prediction" = "green")
-  print(ggplot(arima_df, aes(x = Date)) +
-  geom_line(aes(y = actual_val, color = "Actual Values"), size = 1.2) +
-  geom_line(aes(y = one_step, color = "1 Step Prediction"), size = 1.2) +
-  geom_line(aes(y = lcl, color = "Control Limits"), size = 1.2) +
-  geom_line(aes(y = ucl, color = "Control Limits"), size = 1.2) +
-  geom_line(aes(y = five_step, color = "5 Step Prediction"), size = 1.2) +
-    labs(title = energy,
-         x = "Date",
-         y = colname,
-         color = "legend") +
-      scale_color_manual(values = colours))
-  
-  # calculate errors
-  # root mean squared error comparing the actual to the predicted
-  error <- rmse(arima_df$actual_val, arima_df$one_step)
-  abs_error <- mae(arima_df$actual_val, arima_df$one_step)
-  cat("  Root mean squared error is ", error)
-  cat("  Absolute error is ", abs_error)
-  
-  
-  # add a state pass/warning/fail to the df
-  f <- `$<-`
-  
-  # uniformity
-  arima_df <- f(arima_df, "pred_state", "warning")
-  arima_df$pred_state[arima_df$one_step <= -threshold] <- "fail"
-  arima_df$pred_state[arima_df$one_step>threshold] <- "fail"
-  arima_df$pred_state[arima_df$one_step<arima_df$upper & arima_df$one_step>arima_df$lower] <- "pass"
-  
-  arima_df <- f(arima_df, "actual_state", "warning")
-  arima_df$actual_state[arima_df$actual_val <= -threshold] <- "fail"
-  arima_df$actual_state[arima_df$actual_val>threshold] <- "fail"
-  arima_df$actual_state[arima_df$actual_val<arima_df$upper & arima_df$actual_val>arima_df$lower] <- "pass"
-  
-  # calculate average accuracy
-  average_accuracy <- av_accuracy(arima_df, "warning")
-  cat("  Average accuracy is ", average_accuracy)
-
-}
-  
-
-
-```
-
-Perform the forecast - on all MPC values
 ```{r}
 forecating_df(training_df6x$Uniformity, testing_df6x$Uniformity, testing_df6x$QA_Date, 2, "Uniformity (%)", "6x")
 
@@ -936,7 +937,7 @@ forecating_df(training_df10fff$MPC_Distance, testing_df10fff$MPC_Distance, testi
 ```
 
 
-
+Forecast on symmetry and flatness
 ```{r}
 forecating_df(training_df6x$SymmInAT, testing_df6x$SymmInAT, testing_df6x$QA_Date, 3, "Symmetry Inline", "6x")
 forecating_df(training_df10x$SymmInAT, testing_df10x$SymmInAT, testing_df10x$QA_Date, 3, "Symmetry Inline", "10x")
@@ -959,34 +960,26 @@ forecating_df(training_df10fff$FlatCrossAT, testing_df10fff$FlatCrossAT, testing
 Predict the next values - include all data in the model but only plot for a few weeks
 ```{r}
 
-actual <- df6x$Uniformity
-  
-cl <- limits(actual)[1]
-lcl <- limits(actual)[2]
-ucl <- limits(actual)[3]
+cols <- c("Uniformity", "Output_Change")
+predict_future(df6x, "6x", cols, 2)
+predict_future(df10x, "10x", cols, 2)
+predict_future(df10fff, "10xFFF", cols, 2)
 
-fit <- auto.arima(actual)
-pred <- forecast(fit, 1)
+cols <- c("MPC_Distance")
+predict_future(df6x, "6x", cols, 0.5)
+predict_future(df10x, "10x", cols, 0.5)
+predict_future(df10fff, "10xFFF", cols, 0.5)
 
+cols <- c("SymmInAT", "SymmCrossAT")
+predict_future(df6x, "6x", cols, 3)
+predict_future(df10x, "10x", cols, 3)
+predict_future(df10fff, "10xFFF", cols, 3)
 
-pred_5 <- forecast(fit, 5)
+cols <- c("FlatInAT", "FlatCrossAT")
+predict_future(df6x, "6x", cols, 106)
+predict_future(df10x, "10x", cols, 106)
+predict_future(df10fff, "10xFFF", cols, 106)
 
-last_date = df6x$QA_Date[nrow(df6x)]
-next_day <- last_date + 24*60*60
-
-next_2 <- next_day + 24*60*60
-next_3 <- next_2 + 24*60*60
-next_4 <- next_3 + 24*60*60
-next_5 <- next_4 + 24*60*60
-
-ggplot(tail(df6x, n=15)) +
-  geom_line(aes(x = QA_Date, y = Uniformity), color = "blue") +
-  geom_point(aes(x = next_day, y = pred$mean), color = "red") +
-  geom_point(aes(x = next_day, y = pred_5$mean[1]), color = "yellow") +
-  geom_point(aes(x = next_2, y = pred_5$mean[2]), color = "yellow") +
-geom_point(aes(x = next_3, y = pred_5$mean[3]), color = "yellow") +
-  geom_point(aes(x = next_4, y = pred_5$mean[4]), color = "yellow")+
-  geom_point(aes(x = next_5, y = pred_5$mean[5]), color = "yellow")
 ```
 
 
