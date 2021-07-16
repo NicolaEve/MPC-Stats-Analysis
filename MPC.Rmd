@@ -779,99 +779,6 @@ limits <- function(dfcol){
 ```
 
 ```{r}
-fit <- auto.arima(training_df6x$Uniformity)
-pred <- forecast(fit, 5)
-pred$mean
-5%%5
-```
-
-
-Forecasting with ARIMA
-
-```{r}
-# set up a vector which calcs the limits iteratively for the actual uniformity values
-
-forecating_df <- function(dfcol){
-  
-
-cl <- c()
-lcl <- c()
-ucl <- c()
-
-actual <- c(training_df6x$Uniformity)
-predicted <- c()
-trend <- c()
-
-for (n in 1:nrow(testing_df6x)){
-  
-  # add the actual value
-  actual <- c(actual, testing_df6x$Uniformity[n])
-  
-  cl <- c(cl, limits(actual)[1])
-  lcl <- c(lcl, limits(actual)[2])
-  ucl <- c(ucl, limits(actual)[3])
-  
-  fit <- auto.arima(actual)
-  pred <- forecast(fit, 1)
-  
-  if ( (n-1) %% 5 == 0){
-  pred_5 <- forecast(fit, 5)
-  trend <- c(trend, pred_5$mean)
-  }
-  
-  predicted <- c(predicted, pred$mean)
-  
-}
-  
-}
-
-```
-
-```{r}
-uniformdf <- data.frame(actual_val <- c(testing_df6x$Uniformity),
-                        central <- cl,
-                        lower <- lcl,
-                        upper <- ucl,
-                        one_step <- predicted,
-                        five_step = trend[1:148],
-                        Date <- c(testing_df6x$QA_Date))
-
-```
-
-```{r}
-ggplot(uniformdf, aes(x = Date)) +
-  geom_point(aes(y = actual_val), color = "blue") +
-  geom_point(aes(y = one_step), color = "red") +
-  geom_point(aes(y = lcl), color = "yellow") +
-   geom_point(aes(y = ucl), color = "yellow") +
-  geom_point(aes(y = five_step), color = "green")
-
-```
-
-```{r}
-   
-# root mean squared error comparing the actual to the predicted
-error <- rmse(uniformdf$actual_val, uniformdf$one_step)
-abs_error <- mae(uniformdf$actual_val, uniformdf$one_step)
-print(error)
-print(abs_error)
-
-
-# add a state pass/warning/fail to the df
-f <- `$<-`
-
-# uniformity
-uniformdf <- f(uniformdf, "pred_state", "warning")
-uniformdf$pred_state[uniformdf$one_step <= -2] <- "fail"
-uniformdf$pred_state[uniformdf$one_step>2] <- "fail"
-uniformdf$pred_state[uniformdf$one_step<uniformdf$upper & uniformdf$one_step>uniformdf$lower] <- "pass"
-
-uniformdf <- f(uniformdf, "actual_state", "warning")
-uniformdf$actual_state[uniformdf$actual_val <= -2] <- "fail"
-uniformdf$actual_state[uniformdf$actual_val>2] <- "fail"
-uniformdf$actual_state[uniformdf$actual_val<uniformdf$upper & uniformdf$actual_val>uniformdf$lower] <- "pass"
-
-
 av_accuracy <- function(df, state){
   
   if(state == "fail"){ 
@@ -899,12 +806,109 @@ av_accuracy <- function(df, state){
   av_acc <- acc / nrow(df)
   return(av_acc)
 }
+```
 
-av_accuracy(uniformdf, "warning")
-av_accuracy(uniformdf, "pass")
-av_accuracy(uniformdf, "fail")
+
+Forecasting with ARIMA
+
+convert this into a function 
+repeat analysis with other mpc metrics
+
+" The beam output change has high variability over time and is recorded as a nonstationary time-series dataset, which affects the accuracy of the predictive model. Resolution of this problem may require a different predictive model. Examples of possible models include the EWMA model, recurrent neural networks,21 and artificial neural networks,22 which could be investigated in future work."
+
+from the paper using ARIMA and SPC
+so should I try to implement one of those?
+
+```{r}
+# set up a vector which calcs the limits iteratively for the actual uniformity values
+
+forecating_df <- function(trainingdf, testingdf, datecol, threshold){
+  
+cl <- c()
+lcl <- c()
+ucl <- c()
+
+actual <- c(trainingdf)
+predicted <- c()
+trend <- c()
+
+# iteratively construct the dataframe from predicted values
+for (n in 1:length(testingdf)){
+  # add the actual value
+  actual <- c(actual, testingdf[n])
+  
+  cl <- c(cl, limits(actual)[1])
+  lcl <- c(lcl, limits(actual)[2])
+  ucl <- c(ucl, limits(actual)[3])
+  
+  fit <- auto.arima(actual)
+  pred <- forecast(fit, 1)
+  
+  if ( (n-1) %% 5 == 0){
+  pred_5 <- forecast(fit, 5)
+  trend <- c(trend, pred_5$mean)
+  }
+  
+  predicted <- c(predicted, pred$mean)
+  
+}
+  
+  
+  arima_df <- data.frame(actual_val <- c(testingdf),
+                        central <- cl,
+                        lower <- lcl,
+                        upper <- ucl,
+                        one_step <- predicted,
+                        five_step <- trend[1:length(testingdf)],
+                        Date <- c(datecol))
+  
+  
+  # plot values
+  print(ggplot(arima_df, aes(x = Date)) +
+  geom_point(aes(y = actual_val), color = "blue") +
+  geom_point(aes(y = one_step), color = "red") +
+  geom_point(aes(y = lcl), color = "yellow") +
+  geom_point(aes(y = ucl), color = "yellow") +
+  geom_point(aes(y = five_step), color = "green"))
+  
+  # calculate errors
+  # root mean squared error comparing the actual to the predicted
+  error <- rmse(arima_df$actual_val, arima_df$one_step)
+  abs_error <- mae(arima_df$actual_val, arima_df$one_step)
+  cat("Root mean squared error is ", error)
+  cat("  Absolute error is ", abs_error)
+  
+  
+  # add a state pass/warning/fail to the df
+  f <- `$<-`
+  
+  # uniformity
+  arima_df <- f(arima_df, "pred_state", "warning")
+  arima_df$pred_state[arima_df$one_step <= -threshold] <- "fail"
+  arima_df$pred_state[arima_df$one_step>threshold] <- "fail"
+  arima_df$pred_state[arima_df$one_step<arima_df$upper & arima_df$one_step>arima_df$lower] <- "pass"
+  
+  arima_df <- f(arima_df, "actual_state", "warning")
+  arima_df$actual_state[arima_df$actual_val <= -threshold] <- "fail"
+  arima_df$actual_state[arima_df$actual_val>threshold] <- "fail"
+  arima_df$actual_state[arima_df$actual_val<arima_df$upper & arima_df$actual_val>arima_df$lower] <- "pass"
+  
+  # calculate average accuracy
+  average_accuracy <- av_accuracy(arima_df, "warning")
+  cat("  Average accuracy is ", average_accuracy)
+  
+  return(arima_df)
+
+}
+  
+
 
 ```
+
+```{r}
+uniformdf <- forecating_df(training_df6x$Uniformity, testing_df6x$Uniformity, testing_df6x$QA_Date, 2)
+```
+
 
 
 
