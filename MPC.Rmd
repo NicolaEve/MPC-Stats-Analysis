@@ -1,0 +1,985 @@
+---
+title: "MPC"
+author: "NCompton"
+date: "28/06/2021"
+output: html_document
+---
+
+knit at end
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+install packages
+```{r, echo = FALSE}
+#install.packages("odbc")
+#install.packages("DBI")
+#install.packages("dplyr")
+#install.packages("fitdistrplus")
+#install.packages("ggplot2")
+#install.packages("qicharts2")
+#install.packages("psych")
+#install.packages("distributions3")
+#install.packages("ggstatsplot")
+#install.packages("forecast")
+#install.packages("qcc")
+#install.packages("lubridate")
+#install.packages("Metrics")
+```
+
+Set libraries
+```{r}
+library(psych)
+library(qicharts2)
+library(ggplot2)
+library(fitdistrplus)
+library(dplyr)
+library(odbc)
+library(distributions3)
+library(ggstatsplot)
+library(forecast)
+library(qcc)
+library(lubridate)
+library(Metrics)
+```
+
+Define functions
+
+```{r}
+# function to return 2-sample z statistic and p value
+z.test <- function(x, y){
+  # get the sample mean, sd and n
+  mu_1 = mean(x)
+  mu_2 = mean(y)
+  sigma_1 = sd(x)^2
+  sigma_2 = sd(y)^2
+  n_1 = length(x)
+  n_2 = length(y)
+  
+  # calculate 2 tailed z stat
+  z_stat = (mu_1 - mu_2) / (sqrt ((sigma_1/n_1) + (sigma_2/n_2)))
+  
+  # calculate p value
+  Z <- Normal(0,1) # make a standard normal r.v
+  p = 2 * cdf(Z, abs(z_stat))
+  return(c(z_stat, p))
+  
+}
+
+
+# Paired Z tests
+z.paired <- function(x, y, d0, alpha){
+  if(missing(d0)){d0 <- 0}
+  if(missing(alpha)){alpha <- 0.05}
+  mean_diff <- mean(x-y)
+  sigma_diff <- sqrt(var(x)+var(y)-2*cov(x,y))
+  n <- length(x)
+  z<-sqrt(n)*((mean_diff-d0)/sigma_diff)
+  p_value=2*pnorm(-abs(z))
+  
+    # qnorm gives the alpha quantile of the standard normal  distribution
+  # reject H0 that difference of means = d0 if z < z(alpha/2) or
+  # z > z(1-alpha/2)
+  
+  
+  if(z < qnorm(alpha/2)) {cat("Null hypothesis can be rejected. Evidence the difference in means is not equal to", d0)}
+  if (z > qnorm(1 - (alpha/2))) {
+  cat("Null hypothesis can be rejected. Evidence the difference in means is not equal to", d0)}
+  if ( qnorm(alpha/2)< z & z < qnorm(1- (alpha/2))) {  cat("Null hypothesis can not be rejected, evidence the difference in means is equal to", d0)}
+  
+  return(c(z, p_value))
+  
+}
+
+
+# Function to find the pearson's correlation between the variables
+Symm_Flat_Rel <- function(df){
+  print("Symmetry Crossline and Inline")
+print(cor.test(df$SymmCrossAT, df$SymmInAT))
+
+print("Uniformity and Inline Symmetry")
+print(cor.test(df$Uniformity, df$SymmInAT))
+
+print("Uniformity and Crossline Symmetry")
+print(cor.test(df$Uniformity, df$SymmCrossAT))
+
+print("Flatness Crossline and Inline")
+print(cor.test(df$FlatInAT, df$FlatCrossAT))
+
+print("Uniformity and Inline Flatness")
+print(cor.test(df$Uniformity, df$FlatInAT))
+
+print("Uniformity and Crossline Flatness")
+print(cor.test(df$Uniformity, df$FlatCrossAT))
+
+print("Output change and symmetry inline")
+print(cor.test(df$Output_Change, df$SymmInAT))
+
+print("Output change and symmetry crossline")
+print(cor.test(df$Output_Change, df$SymmCrossAT))
+
+print("Output change and flatness inline")
+print(cor.test(df$Output_Change, df$FlatInAT))
+
+print("Output change and flatness crossline")
+print(cor.test(df$Output_Change, df$FlatCrossAT))
+
+}
+
+
+# Function to plot the relationships between variables
+plot_cor <- function(df, energy){
+  
+  colours <- c("Inline" = "blue", "Crossline" = "yellow")
+print(ggplot(df, aes(x = SymmInAT, y = SymmCrossAT)) +
+  geom_point(color = "red") +
+    geom_smooth(method='loess') +
+    xlab("Symmetry Inline") + 
+    ylab("Symmetry Crossline") + 
+    labs(title = energy))
+
+print(ggplot(df, aes(x = Uniformity)) +
+  geom_point(aes(y = SymmInAT, color = "Inline")) +
+  geom_point(aes(y = SymmCrossAT, color = "Crossline")) +
+  geom_smooth(aes(x = Uniformity, y = SymmInAT, color = "Inline"), method = 'loess') +
+  geom_smooth(aes(x = Uniformity, y = SymmCrossAT, color = "Crossline"), method = 'loess') +
+  xlab("Uniformity") +
+  ylab("Symmetry") +
+    labs(title = energy, color = "legend") +
+      scale_color_manual(values = colours))
+
+print(ggplot(df, aes(Output_Change)) +
+  geom_point(aes(y = SymmInAT, color = "Inline")) +
+  geom_point(aes(y = SymmCrossAT, color = "Crossline")) +
+     geom_smooth(aes(x = Output_Change, y = SymmInAT, color = "Inline"), method = 'loess') +
+  geom_smooth(aes(x = Output_Change, y = SymmCrossAT, color = "Crossline"), method = 'loess') +
+  xlab("Output Change") + 
+  ylab("Symmetry") +
+    labs(title = energy, color = "legend")+
+    scale_color_manual(values = colours))
+
+print(ggplot(df, aes(x = FlatInAT, y = FlatCrossAT)) +
+  geom_point(color = "red") +
+    geom_smooth(method='loess') +
+   xlab("Flatness Inline") + 
+  ylab("Flatness Crossline") +
+    labs(title = energy))
+
+print(ggplot(df, aes(Uniformity)) +
+  geom_point(aes(y = FlatInAT, color = "Inline")) +
+  geom_point(aes(y = FlatCrossAT, color = "Crossline")) +
+     geom_smooth(aes(x = Uniformity, y = FlatInAT, color = "Inline"), method = 'loess') +
+  geom_smooth(aes(x = Uniformity, y = FlatCrossAT, color = "Crossline"), method = 'loess') +
+  xlab("Uniformity") + 
+  ylab("Flatness") +
+    labs(title = energy, color = "legend") +
+    scale_color_manual(values = colours))
+
+print(ggplot(df, aes(Output_Change)) +
+  geom_point(aes(y = FlatInAT, color = "Inline")) +
+  geom_point(aes(y = FlatCrossAT, color = "Crossline")) + 
+  geom_smooth(aes(x = Output_Change, y = FlatInAT, color = "Inline"), method = 'loess') +
+  geom_smooth(aes(x = Output_Change, y = FlatCrossAT, color = "Crossline"), method = 'loess') +
+  xlab("Output Change") +
+  ylab("Flatness") +
+    labs(title = energy,  color = "legend") +
+    scale_color_manual(values = colours))
+
+print(ggplot(df, aes(x = MPC_Distance, y = Calibrated_Distance)) +
+        geom_point(color = "red") +
+        xlab("MPC Centre Shift") +
+        ylab("Calibrated Centre Shift") +
+        labs(title = energy))
+
+}
+
+
+# Function to calculate sensitivty and specificty
+sens_spec <- function(var1, var2){
+
+false_pos <- sum(var1 == "pass" & var2 == "fail")
+true_pos <- sum(var1 == "pass" & var2 == "pass")
+false_neg <- sum(var1 == "fail" & var2 == "pass")
+true_neg <- sum(var1 == "fail" & var2 == "fail")
+
+sens <- true_pos / (true_pos + false_neg)
+cat("   Sensitivity is ", sens)
+
+spec <- true_neg / (true_neg + false_pos)
+cat("  Specificity is ", spec)
+}
+
+
+# Function to calculate senstivity and specficity for each variable
+calc_sens_spec <- function(df){
+
+  # symmetry against uniformity
+  print(" Uniformity vs Combined Symmetry ")
+  sens_spec(df$uniformity_test, df$symm_test)
+  print(" Uniformity vs symmetry inline ")
+  sens_spec(df$uniformity_test, df$symm_in_test)
+  print("Uniformity vs symmetry crossline ")
+  sens_spec(df$uniformity_test, df$symm_cross_test)
+  
+  # symmetry against beam output change
+  print("Beam output vs symmetry")
+  sens_spec(df$output_test, df$symm_test)
+  print("Beam output vs symmetry inline")
+  sens_spec(df$output_test, df$symm_in_test)
+  print("Beam output vs symmetry crossline")
+  sens_spec(df$output_test, df$symm_cross_test)
+  
+  # centre shift distance
+  print("Beam centre shift: MPC vs calibrated")
+  sens_spec(df$centre_mpc_test, df$centre_cal_test)
+  
+   # flatness against uniformity
+  print(" Uniformity vs Combined Symmetry ")
+  sens_spec(df$uniformity_test, df$flat_test)
+  print(" Uniformity vs flatness inline ")
+  sens_spec(df$uniformity_test, df$flat_in_test)
+  print("Uniformity vs flatness crossline ")
+  sens_spec(df$uniformity_test, df$flat_cross_test)
+  
+  # flatness against beam output change
+  print("Beam output vs flatness")
+  sens_spec(df$output_test, df$flat_test)
+  print("Beam output vs flatness inline")
+  sens_spec(df$output_test, df$flat_in_test)
+  print("Beam output vs flatness crossline")
+  sens_spec(df$output_test, df$flat_cross_test)
+}
+
+
+
+# Function to add pass/fail columns to the dataframe
+
+add_cols <- function(df){
+  
+  symmetry_threshold <- 3
+  flat_threshold <- 106
+  distance_threshold <- 0.5
+  
+  # set the mpc thresholds
+  centre_threshold <- 0.5
+  uniformity_threshold <- 2
+  output_threshold <- 2
+  
+  f <- `$<-`
+  
+  # uniformity
+  df <- f(df, "uniformity_test", "fail")
+  df$uniformity_test[df$Uniformity<uniformity_threshold & df$Uniformity>-uniformity_threshold] <- "pass"
+  
+    
+  # combined symmetry
+  # fail if 1 of them fails
+  df<- f(df, "symm_test", "fail")
+  df$symm_test[df$SymmInAT<symmetry_threshold & df$SymmInAT>-symmetry_threshold & df$SymmCrossAT<symmetry_threshold & df$SymmCrossAT>-symmetry_threshold] <- "pass"
+  
+   # fail for inline only
+  df <- f(df, "symm_in_test", "fail")
+  df$symm_in_test[df$SymmInAT<symmetry_threshold & df$SymmInAT>-symmetry_threshold] <- "pass"
+  
+    # fail for crossline only
+  df <- f(df, "symm_cross_test", "fail")
+  df$symm_cross_test[df$SymmCrossAT<symmetry_threshold & df$SymmCrossAT>-symmetry_threshold] <- "pass"
+  
+  
+  
+  # flatness
+  # fail if 1 of them fails
+  df<- f(df, "flat_test", "fail")
+  df$flat_test[df$FlatInAT<flat_threshold & df$FlatInAT>-flat_threshold & df$FlatCrossAT<flat_threshold & df$FlatCrossAT>-flat_threshold] <- "pass"
+  
+   # fail for inline only
+  df <- f(df, "flat_in_test", "fail")
+  df$flat_in_test[df$FlatInAT<flat_threshold & df$FlatInAT>-flat_threshold] <- "pass"
+  
+    # fail for crossline only
+  df <- f(df, "flat_cross_test", "fail")
+  df$flat_cross_test[df$FlatCrossAT<flat_threshold & df$FlatCrossAT>-flat_threshold] <- "pass"
+  
+  
+    # output change
+  df <- f(df, "output_test", "fail")
+  df$output_test[df$Output_Change<output_threshold & df$output_test>-output_threshold] <- "pass"
+  
+  # centre shift
+  df <- f(df, "centre_mpc_test", "fail")
+  df$centre_mpc_test[df$MPC_Distance<distance_threshold & df$MPC_Distance>-distance_threshold] <- "pass"
+  
+  df <- f(df, "centre_cal_test", "fail")
+  df$centre_cal_test[df$Calibrated_Distance<centre_threshold & df$Calibrated_Distance>-centre_threshold] <- "pass"
+  
+  return(df)
+  
+}
+
+
+# plot the symmetry and flatness over time
+plot_time <- function(df, energy){
+  colours <- c("Inline" = "blue", "Crossline" = "yellow")
+  
+print(ggplot(df, aes(x = QA_Date)) +
+  geom_point(aes(y = FlatInAT, color = "Inline")) + 
+  geom_point(aes(y = FlatCrossAT, color = "Crossline")) +
+  geom_smooth(aes(x = QA_Date, y = FlatInAT, color = "Inline"), method = 'loess') +
+   geom_smooth(aes(x = QA_Date, y = FlatCrossAT, color = "Crossline"), method = 'loess') +
+  labs(title = paste("Flatness", energy)))
+
+
+print(ggplot(df, aes(x = QA_Date)) +
+  geom_point(aes(y = SymmInAT, color = "Inline")) +
+  geom_point(aes(y = SymmCrossAT, color = "Crossline")) +
+    geom_smooth(aes(x = QA_Date, y = SymmInAT, color = "Inline"), method = 'loess') +
+   geom_smooth(aes(x = QA_Date, y = SymmCrossAT, color = "Crossline"), method = 'loess') +
+  labs(title = paste("Symmetry", energy)))
+}
+
+
+# plot the MPC results over time
+
+plot_mpc_time <- function(df, energy){
+  
+  print(ggplot(df, aes(QA_Date, Output_Change)) +
+  geom_point() +
+    #geom_smooth(aes(x = QA_Date, y = Output_Change), method = "gam") +
+  xlab("QA Date") +
+  ylab("Output Change") +
+  ggtitle(paste("Output Changes against Time", energy)))
+  
+    print(ggplot(df, aes(QA_Date, Uniformity)) +
+  geom_point() +
+    #geom_smooth(aes(x = QA_Date, y = Uniformity), method = "gam") +
+  xlab("QA Date") +
+  ylab("Uniformity") +
+  ggtitle(paste("Uniformity against Time", energy)))
+    
+    print(ggplot(df, aes(QA_Date, MPC_Distance)) +
+  geom_point() +
+    #geom_smooth(aes(x = QA_Date, y = MPC_Distance), method = "gam") +
+  xlab("QA Date") +
+  ylab("Beam Centre Shift (mm)") +
+  ggtitle(paste("Centre shift against Time", energy)))
+
+}
+
+
+# plot the MPC reported centre shift and my algorithm against time
+plot_centre_shift <- function(df, energy){
+  colors <- c("MPC" = "blue", "Calibrated" = "red")
+  
+    print(ggplot(df, aes(x = QA_Date)) +
+  geom_point(aes(y = MPC_Distance, color = "MPC")) +
+    geom_point(aes(y = Calibrated_Distance, color = "Calibrated")) +
+    geom_smooth(aes(x = QA_Date, y = MPC_Distance, color = "MPC"), method = "loess") +
+    geom_smooth(aes(x = QA_Date, y = Calibrated_Distance, color = "Calibrated"), method = "loess") +
+  xlab("QA Date") +
+  ylab("Beam Centre Shift (mm)") +
+  ggtitle(paste("Centre shift against Time", energy)))
+}
+
+
+
+# set up the training and testing datasets
+
+training_df <- function(df){
+  # first 85% of the data is training
+  return(head(df, round(nrow(df) * 0.85)))
+}
+
+testing_df <- function(df){
+  # last 15% of the data is testing
+  return(tail(df, nrow(df) - round(nrow(df) * 0.85)))
+}
+
+
+# SPC XmR control limits
+limits <- function(dfcol){
+
+  the_Mean <- mean(dfcol)
+  the_mR <- mean(abs(diff(dfcol)))
+  the_Sigma <- the_mR/1.128
+  the_LCL <- the_Mean - 3 * the_Sigma
+  the_UCL <- the_Mean + 3 * the_Sigma
+  
+  return(c(the_Mean, the_LCL, the_UCL))
+}
+
+
+# average accuracy
+av_accuracy <- function(df, state){
+  
+  if(state == "fail"){ 
+    non_state_1 <- "pass"
+    non_state_2 <- "warning"}
+  
+   if(state == "warning"){ 
+     non_state_1 <- "pass"
+     non_state_2 <- "fail"}
+  
+   if(state == "pass"){ 
+     non_state_1 <- "warning"
+     non_state_2 <- "fail"}
+  
+  true_pos <-  sum(df$pred_state == state & df$actual_state == state)
+  
+  true_neg <- sum(df$pred_state == non_state_1 & df$actual_state == non_state_1) + sum(df$pred_state == non_state_2 & df$actual_state == non_state_2)
+  
+  false_pos <- sum(df$pred_state == state & df$actual_state != state)
+  
+  false_neg <- sum(df$pred_state == non_state_1 & df$actual_state != non_state_1) + sum(df$pred_state == non_state_2 & df$actual_state != non_state_2)
+  
+  acc <- (true_pos + true_neg) / (true_pos+true_neg+false_pos+false_neg)
+  
+  av_acc <- acc / nrow(df)
+  return(av_acc)
+}
+
+
+# predicting values - comparing prediction from training to known values from testing
+# set up a vector which calcs the limits iteratively for the actual uniformity values
+
+forecating_df <- function(trainingdf, testingdf, datecol, threshold, colname, energy){
+  
+cl <- c()
+lcl <- c()
+ucl <- c()
+
+actual <- c(trainingdf)
+predicted <- c()
+trend <- c()
+threshold_line <- c()
+
+# iteratively construct the dataframe from predicted values
+for (n in 1:length(testingdf)){
+  # add the actual value
+  actual <- c(actual, testingdf[n])
+  
+  cl <- c(cl, limits(actual)[1])
+  lcl <- c(lcl, limits(actual)[2])
+  ucl <- c(ucl, limits(actual)[3])
+  threshold_line <- c(threshold_line, threshold)
+  
+  fit <- auto.arima(actual)
+  pred <- forecast(fit, 1)
+  
+  if ( (n-1) %% 5 == 0){
+  pred_5 <- forecast(fit, 5)
+  trend <- c(trend, pred_5$mean)
+  }
+  
+  predicted <- c(predicted, pred$mean)
+  
+}
+  
+  
+  arima_df <- data.frame(actual_val <- c(testingdf),
+                        central <- cl,
+                        lower <- lcl,
+                        upper <- ucl,
+                        one_step <- predicted,
+                        five_step <- trend[1:length(testingdf)],
+                        Date <- c(datecol))
+  
+  
+  # plot values
+  colours = c("Actual Values" = "black", "Control Limits" = "blue", "1 Step Prediction" = "orange", "5 Step Prediction" = "green", "Average" = "yellow", "Threshold" = "red")
+  
+  print(ggplot(arima_df, aes(x = Date)) +
+  geom_line(aes(y = actual_val, color = "Actual Values"), size = 1.05) +
+  geom_line(aes(y = one_step, color = "1 Step Prediction"), size = 1.05) +
+  geom_line(aes(y = lcl, color = "Control Limits"), size = 1.05) +
+  geom_line(aes(y = ucl, color = "Control Limits"), size = 1.1) +
+    geom_line(aes(y = cl, color = "Average"), size = 1.05) +
+     geom_line(aes(y = threshold_line, color = "Threshold"), size = 1.05) +
+  geom_line(aes(y = five_step, color = "5 Step Prediction"), size = 1.05) +
+    labs(title = energy,
+         x = "Date",
+         y = colname,
+         color = "legend") +
+      scale_color_manual(values = colours))
+  
+  # calculate errors
+  # root mean squared error comparing the actual to the predicted
+  error <- rmse(arima_df$actual_val, arima_df$one_step)
+  abs_error <- mae(arima_df$actual_val, arima_df$one_step)
+  cat("  Root mean squared error is ", error)
+  cat("  Absolute error is ", abs_error)
+  
+  
+  # add a state pass/warning/fail to the df
+  f <- `$<-`
+  
+  # uniformity
+  arima_df <- f(arima_df, "pred_state", "warning")
+  arima_df$pred_state[arima_df$one_step <= -threshold] <- "fail"
+  arima_df$pred_state[arima_df$one_step>threshold] <- "fail"
+  arima_df$pred_state[arima_df$one_step<arima_df$upper & arima_df$one_step>arima_df$lower] <- "pass"
+  
+  arima_df <- f(arima_df, "actual_state", "warning")
+  arima_df$actual_state[arima_df$actual_val <= -threshold] <- "fail"
+  arima_df$actual_state[arima_df$actual_val>threshold] <- "fail"
+  arima_df$actual_state[arima_df$actual_val<arima_df$upper & arima_df$actual_val>arima_df$lower] <- "pass"
+  
+  # calculate average accuracy
+  average_accuracy <- av_accuracy(arima_df, "warning")
+  cat("  Average accuracy is ", average_accuracy)
+
+}
+
+
+# predicting actual future values and plotting
+# limits are calculated with the most up to date info from the database; hence are recalculated and the sysetm is relearning
+predict_future <- function(df, energy, cols = names(df), threshold){
+  colours <- c("Actual Values" = "black", "Predicted Values" = "blue", "Control Limits" = "yellow", "Average" = "orange", "Threshold" = "red")
+  for (col in cols){
+    
+  actual <- df[[col]]
+
+  fit <- auto.arima(actual)
+  pred <- forecast(fit, 1)
+  
+  pred_5 <- forecast(fit, 5)
+  
+  last_date = df$QA_Date[nrow(df)]
+  next_day <- last_date + 24*60*60
+  
+  next_2 <- next_day + 24*60*60
+  next_3 <- next_2 + 24*60*60
+  next_4 <- next_3 + 24*60*60
+  next_5 <- next_4 + 24*60*60
+  
+  cl <- c()
+  lcl <- c()
+  ucl <- c()
+  limit <- c()
+  numpoints = 20
+  for (n in numpoints){
+    cl <- c(cl, limits(actual)[1])
+    lcl <- c(lcl, limits(actual)[2])
+    ucl <- c(ucl, limits(actual)[3])
+    limit <- c(threshold, limit)
+  }
+  
+  reduced_df <- tail(df, n = numpoints)
+  reduced_actual <- reduced_df[[col]]
+  
+ print(ggplot(reduced_df) +
+    geom_line(aes(x = QA_Date, y = reduced_actual, color = "Actual Values")) +
+    geom_line(aes(x = QA_Date, y = cl, color = "Average")) +
+    geom_line(aes(x = QA_Date, y = lcl, color = "Control Limits")) +
+    geom_line(aes(x = QA_Date, y = ucl, color = "Control Limits")) +
+      geom_line(aes(x = QA_Date, y = limit, color = "Threshold")) +
+    geom_point(aes(x = next_day, y = pred$mean, color = "Predicted Values")) +
+    geom_point(aes(x = next_day, y = pred_5$mean[1], color = "Predicted Values")) +
+    geom_point(aes(x = next_2, y = pred_5$mean[2], color = "Predicted Values")) +
+  geom_point(aes(x = next_3, y = pred_5$mean[3], color = "Predicted Values")) +
+    geom_point(aes(x = next_4, y = pred_5$mean[4], color = "Predicted Values")) +
+    geom_point(aes(x = next_5, y = pred_5$mean[5], color = "Predicted Values")) + 
+    labs( title = energy,
+          x = "QA Date",
+          y = col,
+          color = "legend") +
+      scale_color_manual(values = colours))
+ 
+  }   
+}
+```
+
+
+Set up the database connection
+```{r}
+con <- DBI::dbConnect(odbc::odbc(), 
+                      Driver = "SQL Server", 
+                      Server = "IT049561\\SQLEXPRESS", 
+                      Database = "MPC", 
+                      Trusted_Connection = "True")
+```
+
+
+Get a dataframe for each beam energy
+```{sql connection=con, output.var = "df6x"}
+SELECT *
+FROM "6x"
+WHERE QA_Date >= '2018-01-01'
+```
+```{sql connection=con, output.var = "df10x"}
+SELECT *
+FROM "10x"
+WHERE QA_Date >= '2018-01-01'
+
+```
+```{sql connection=con, output.var = "df10fff"}
+SELECT *
+FROM "10fff"
+WHERE QA_Date >= '2018-01-01'
+
+```
+
+Get the dataframes of the recent data - from 1st April 2021 when we measured the water phantom
+```{sql connection=con, output.var=recent6x}
+SELECt *
+FROM "6x"
+WHERE QA_Date >= '2021-04-01'
+```
+
+```{sql connection=con, output.var=recent10x}
+SELECt *
+FROM "10x"
+WHERE QA_Date >= '2021-04-01'
+```
+
+```{sql connection=con, output.var=recent10fff}
+SELECt *
+FROM "10fff"
+WHERE QA_Date >= '2021-04-01'
+```
+
+
+
+Remove outliers from the recent dfs so that we don't skew the results? Particularly for 10FFF. While these data points are valid, they are going to mess up all the results - we know the flattening free will have bigger fluctuations but retaining them bias's the analysis; it removes the actual relationship from sight - SD and mean are sensitive to outliers and look at the boxplot - we can't see most of the spread - including outliers means that later we can't see the correlations.
+
+Remove outliers - visual inspection to check the outliers have been removed successfully/
+
+```{r}
+
+
+remove_outliers <- function(df, cols = names(df)) {
+  for (col in cols) {
+    boxplot(df[[col]], plot=FALSE)$out
+    outliers <- boxplot(df[[col]], plot=FALSE)$out
+    df <- df[-which(df[[col]] %in% outliers),]
+  }
+  df
+}
+
+# we want to remove outliers from all 4 flatness columns of 10FFF beam
+
+rm_out_10fff <- remove_outliers(recent10fff, c("FlatInAT", "FlatCrossAT", "FlatInBT", "FlatCrossBT"))
+
+```
+
+
+
+Descriptive statistics with psych
+```{r, echo = FALSE}
+describeBy(df6x$MPC_Distance)
+
+describeBy(df6x$Calibrated_Distance)
+
+describeBy(df6x$Uniformity)
+
+describeBy(df6x$Output_Change)
+```
+
+
+Define the random samples
+```{r}
+set.seed(1) # set seed makes the analysis reproducible
+rand_6x <- recent6x[sample(nrow(recent6x), size=50), ]
+rand_10x <- recent10x[sample(nrow(recent10x), size=50), ]
+rand_10fff <- recent10fff[sample(nrow(recent10fff), size=50), ]
+rand_10fff_rm_out <- rm_out_10fff[sample(nrow(rm_out_10fff), size=50),]
+
+```
+
+
+Z tests 
+Symmetry inline and crossline directions after calibration
+
+Z test null hypothesis: the means of the two groups are equal
+The Z test statistic is inside the 95% confidence interval, so we can not reject the null hypothesis. 
+The p-value tells us how statistically significant this is and it is quite large; but still we don't have enough evidence to reject the null hypothesis.
+
+
+
+Comparing Symmetry and Flatness in each direction
+```{r}
+
+boxplot(recent6x$SymmInAT, recent6x$SymmCrossAT, recent10x$SymmInAT, recent10x$SymmCrossAT, recent10fff$SymmInAT, recent10fff$SymmCrossAT, main = "Symmetry (%)", names = c("6x", "6x", "10x", "10x", "10fff", "10fff"), col = c(2,3,2,3,2,3))
+legend(x = "topright", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
+
+
+boxplot(recent6x$FlatInAT, recent6x$FlatCrossAT, recent10x$FlatInAT, recent10x$FlatCrossAT, main = "Flatness", names = c("6x", "6x", "10x", "10x"), col = c(2,3,2,3))
+legend(x = "topright", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
+
+boxplot(rm_out_10fff$FlatInAT, rm_out_10fff$FlatCrossAT, main = "Flatness", names = c("10xFFF", "10xFFF"), col = c(2,3))
+legend(x = "topright", legend = c("Inline", "Crossline"), fill = 2:3, col = c("orange", "red"))
+
+# Compare symm and flat
+# 6x
+z.paired(rand_6x$SymmInAT, rand_6x$SymmCrossAT, 0, alpha = 0.05)
+z.paired(rand_6x$FlatInAT, rand_6x$FlatCrossAT, 0, alpha = 0.05)
+
+# 10x
+z.paired(rand_10x$SymmInAT, rand_10x$SymmCrossAT, 0, alpha = 0.05)
+z.paired(rand_10x$FlatInAT, rand_10x$FlatCrossAT, 0, alpha = 0.05)
+
+# 10xFFF
+z.paired(rand_10fff_rm_out$SymmInAT, rand_10fff_rm_out$SymmCrossAT, 0, alpha = 0.05)
+z.paired(rand_10fff_rm_out$FlatInAT, rand_10fff_rm_out$FlatCrossAT, 0, alpha = 0.05)
+```
+
+
+Paired Z tests to see if there's a significant difference as a result of applying the calibration transformation.
+
+Symmetry
+```{r}
+boxplot(recent6x$SymmInBT, recent6x$SymmInAT, recent10x$SymmInBT, recent10x$SymmInAT, recent10fff$SymmInBT, recent10fff$SymmInAT, main = "Symmetry Inline (%)", names = c("6x", "6x", "10x", "10x", "10fff", "10fff"), col = c(2,3,2,3,2,3))
+legend(x = "topright", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
+
+boxplot(recent6x$SymmCrossBT, recent6x$SymmCrossAT, recent10x$SymmCrossBT, recent10x$SymmCrossAT, recent10fff$SymmCrossBT, recent10fff$SymmCrossAT, main = "Symmetry Crossline (%)", names = c("6x", "6x", "10x", "10x", "10fff", "10fff"), col = c(2,3,2,3,2,3))
+legend(x = "topright", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
+
+# 6x
+z.paired(rand_6x$SymmInBT, rand_6x$SymmInAT, 0, alpha = 0.05)
+z.paired(rand_6x$SymmCrossBT, rand_6x$SymmCrossAT, 0, alpha = 0.05)
+
+# 10x
+z.paired(rand_10x$SymmInBT, rand_10x$SymmInAT, 0, alpha = 0.05)
+z.paired(rand_10x$SymmCrossBT, rand_10x$SymmCrossAT, 0, alpha = 0.05)
+
+# 10fff
+z.paired(rand_10fff$SymmInBT, rand_10fff$SymmInAT, 0, alpha = 0.05)
+z.paired(rand_10fff$SymmCrossBT, rand_10fff$SymmCrossAT, 0, alpha = 0.05)
+
+```
+
+Flatness
+```{r}
+
+boxplot(recent6x$FlatInBT, recent6x$FlatInAT, recent10x$FlatInBT, recent10x$FlatInAT, main = "Flatness Inline", names = c("6x", "6x", "10x", "10x"), col = c(2,3,2,3))
+legend(x = "topright", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
+
+boxplot(rm_out_10fff$FlatInBT, rm_out_10fff$FlatInAT, rm_out_10fff$FlatCrossBT, rm_out_10fff$FlatCrossAT, main = "Flatness: 10xFFF", names = c("Inline", "Inline", "Crossline", "Crossline"), col = c(2,3,2,3))
+legend(x = "topleft", legend = c("Before", "After"), fill = 2:3, col = c("orange", "red"))
+
+boxplot(recent6x$FlatCrossBT, recent6x$FlatCrossAT, recent10x$FlatCrossBT, recent10x$FlatCrossAT, main = "Flatness Crossline", names = c("6x", "6x", "10x", "10x"), col = c(2,3,2,3))
+legend(x = "topright", legend = c("Before Calibration", "After Calibration"), fill = 2:3, col = c("orange", "red"))
+
+# 6x
+z.paired(rand_6x$FlatInBT, rand_6x$FlatInAT, 0, alpha = 0.05)
+z.paired(rand_6x$FlatCrossBT, rand_6x$FlatCrossAT, 0, alpha = 0.05)
+
+# 10x
+z.paired(rand_10x$FlatInBT, rand_10x$FlatInAT, 0, alpha = 0.05)
+z.paired(rand_10x$FlatCrossBT, rand_10x$FlatCrossAT, 0, alpha = 0.05)
+
+# 10fff
+#z.paired(rand_10fff$FlatInBT, rand_10fff$FlatInAT, 0, alpha = 0.05)
+#z.paired(rand_10fff$FlatCrossBT, rand_10fff$FlatCrossAT, 0, alpha = 0.05)
+
+# 10fff with outliers removed, random sample
+z.paired(rand_10fff_rm_out$FlatInBT, rand_10fff_rm_out$FlatInAT)
+z.paired(rand_10fff_rm_out$FlatCrossBT, rand_10fff_rm_out$FlatCrossAT)
+```
+
+
+Compare the beam centre shift
+```{r}
+
+boxplot(recent6x$MPC_Distance, recent6x$Calibrated_Distance, recent10x$MPC_Distance, recent10x$Calibrated_Distance, recent10fff$MPC_Distance, recent10fff$Calibrated_Distance, main = "Beam Centre Shift (mm)", names = c("6x", "6x", "10x", "10x", "10fff", "10fff"), col = c(2,3,2,3,2,3))
+legend(x = "topleft", legend = c("MPC Distance", "Calibrated Distance"), fill = 2:3, col = c("orange", "red"))
+
+
+z.paired(rand_6x$MPC_Distance, rand_6x$Calibrated_Distance, 0.5, alpha = 0.05)
+
+z.paired(rand_10x$MPC_Distance, rand_10x$Calibrated_Distance, 0.5, alpha = 0.05)
+
+z.paired(rand_10fff$MPC_Distance, rand_10fff$Calibrated_Distance, 0.5, alpha = 0.05)
+
+```
+
+
+Sensitivity and Specificity
+
+
+add pass/fail columns to the dataframe
+```{r}
+recent6x <- add_cols(recent6x)
+recent10x <- add_cols(recent10x)
+recent10fff <- add_cols(recent10fff)
+
+```
+
+6x 
+
+```{r}
+calc_sens_spec(recent6x)
+```
+10x
+
+```{r}
+calc_sens_spec(recent10x)
+
+```
+
+```{r}
+calc_sens_spec(recent10fff)
+```
+
+
+Are there a correlations between symmetry, flatness and uniformity, output change?
+With time?
+
+Pearson's test for correlation
+
+```{r}
+Symm_Flat_Rel(recent6x)
+```
+```{r}
+Symm_Flat_Rel(recent10x)
+```
+```{r}
+Symm_Flat_Rel(recent10fff)
+```
+
+
+```{r}
+plot_cor(recent6x, energy = "6x")
+plot_cor(recent10x, energy = "10x")
+plot_cor(recent10fff, energy = "10xFFF")
+plot_cor(rm_out_10fff, energy = "10xFFF (outliers removed)")
+
+```
+
+Time series
+
+Plot the flatness and symmetry against time
+```{r}
+
+plot_time(recent6x, "6x")
+plot_time(recent10x, "10x")
+plot_time(recent10fff, "10xFFF")
+plot_time(rm_out_10fff, "10xFFF (outliers removed)")
+
+```
+
+
+MPC results against time
+```{r}
+
+#plot_mpc_time(df6x, "6x")
+#plot_mpc_time(df10x, "10x")
+#plot_mpc_time(df10fff, "10xFFF")
+
+
+# clean the df to remove the outliers identified visually from the graphs above
+df10x <- df10x[which(df10x$Output_Change > -5),]
+df10x <- df10x[which(df10x$Uniformity < 10),]
+df10x <- df10x[which(df10x$MPC_Distance < 0.5),]
+
+
+df10fff <- df10fff[which(df10fff$Output_Change<9),]
+df10fff <- df10fff[which(df10fff$Output_Change> -5),]
+df10fff <- df10fff[which(df10fff$Uniformity<40),]
+df10fff <- df10fff[which(df10fff$MPC_Distance<0.5),]
+
+
+plot_mpc_time(df6x, "6x")
+plot_mpc_time(df10x, "10x")
+plot_mpc_time(df10fff, "10xFFF")
+```
+
+centre shift of MPC and my algorithm - shows bias
+```{r}
+
+plot_centre_shift(recent6x, "6x")
+plot_centre_shift(recent10x, "10x")
+plot_centre_shift(recent10fff, "10xFFF")
+
+```
+
+
+Predicting future values
+
+Set up the training and testing dfs
+```{r}
+training_df6x <- training_df(df6x)
+testing_df6x <- testing_df(df6x)
+
+training_df10x <- training_df(df10x)
+testing_df10x <- testing_df(df10x)
+
+training_df10fff <- training_df(df10fff)
+testing_df10fff <- testing_df(df10fff)
+
+```
+
+
+
+Forecasting with ARIMA
+
+
+Perform the forecast on all MPC values
+
+```{r}
+forecating_df(training_df6x$Uniformity, testing_df6x$Uniformity, testing_df6x$QA_Date, 2, "Uniformity (%)", "6x")
+
+forecating_df(training_df10x$Uniformity, testing_df10x$Uniformity, testing_df10x$QA_Date, 2, "Uniformity (%)", "10x")
+
+forecating_df(training_df10fff$Uniformity, testing_df10fff$Uniformity, testing_df10fff$QA_Date, 2, "Uniformity (%)", "10xFFF")
+
+forecating_df(training_df6x$Output_Change, testing_df6x$Output_Change, testing_df6x$QA_Date, 2, "Output Change (%)", "6x")
+
+forecating_df(training_df10x$Output_Change, testing_df10x$Output_Change, testing_df10x$QA_Date, 2, "Output Change (%)", "10x")
+
+forecating_df(training_df10fff$Output_Change, testing_df10fff$Output_Change, testing_df10fff$QA_Date, 2, "Output Change (%)", "10xFFF")
+
+forecating_df(training_df6x$MPC_Distance, testing_df6x$MPC_Distance, testing_df6x$QA_Date, 0.5, "Beam Centre Shift (mm)", "6x")
+
+forecating_df(training_df10x$MPC_Distance, testing_df10x$MPC_Distance, testing_df10x$QA_Date, 0.5, "Beam Centre Shift (mm)", "10x")
+
+forecating_df(training_df10fff$MPC_Distance, testing_df10fff$MPC_Distance, testing_df10fff$QA_Date, 0.5, "Beam Centre Shift (mm)", "10xFFF")
+```
+
+
+Forecast on symmetry and flatness
+```{r}
+forecating_df(training_df6x$SymmInAT, testing_df6x$SymmInAT, testing_df6x$QA_Date, 3, "Symmetry Inline", "6x")
+forecating_df(training_df10x$SymmInAT, testing_df10x$SymmInAT, testing_df10x$QA_Date, 3, "Symmetry Inline", "10x")
+forecating_df(training_df10fff$SymmInAT, testing_df10fff$SymmInAT, testing_df10fff$QA_Date, 3, "Symmetry Inline", "10xFFF")
+
+forecating_df(training_df6x$SymmCrossAT, testing_df6x$SymmCrossAT, testing_df6x$QA_Date, 3, "Symmetry Crossline", "6x")
+forecating_df(training_df10x$SymmCrossAT, testing_df10x$SymmCrossAT, testing_df10x$QA_Date, 3, "Symmetry Crossline", "10x")
+forecating_df(training_df10fff$SymmcrossAT, testing_df10fff$SymmCrossAT, testing_df10fff$QA_Date, 3, "Symmetry Crossline", "10xFFF")
+
+forecating_df(training_df6x$FlatInAT, testing_df6x$FlatInAT, testing_df6x$QA_Date, 106, "Flatness Inline", "6x")
+forecating_df(training_df10x$FlatInAT, testing_df10x$FlatInAT, testing_df10x$QA_Date, 106, "Flatness Inline", "10x")
+forecating_df(training_df10fff$FlatInAT, testing_df10fff$FlatInAT, testing_df10fff$QA_Date, 106, "Flatness Inline", "10xFFF")
+
+forecating_df(training_df6x$FlatCorssAT, testing_df6x$FlatCrossAT, testing_df6x$QA_Date, 106, "Flatness Crossline", "6x")
+forecating_df(training_df10x$FlatCrossAT, testing_df10x$FlatCrossAT, testing_df10x$QA_Date, 106, "Flatness Crossline", "10x")
+forecating_df(training_df10fff$FlatCrossAT, testing_df10fff$FlatCrossAT, testing_df10fff$QA_Date, 106, "Flatness Crossline", "10xFFF")
+```
+
+
+Predict the next values - include all data in the model but only plot for a few weeks
+```{r}
+
+cols <- c("Uniformity", "Output_Change")
+predict_future(df6x, "6x", cols, 2)
+predict_future(df10x, "10x", cols, 2)
+predict_future(df10fff, "10xFFF", cols, 2)
+
+cols <- c("MPC_Distance")
+predict_future(df6x, "6x", cols, 0.5)
+predict_future(df10x, "10x", cols, 0.5)
+predict_future(df10fff, "10xFFF", cols, 0.5)
+
+cols <- c("SymmInAT", "SymmCrossAT")
+predict_future(df6x, "6x", cols, 3)
+predict_future(df10x, "10x", cols, 3)
+predict_future(df10fff, "10xFFF", cols, 3)
+
+cols <- c("FlatInAT", "FlatCrossAT")
+predict_future(df6x, "6x", cols, 106)
+predict_future(df10x, "10x", cols, 106)
+predict_future(df10fff, "10xFFF", cols, 106)
+
+```
+
+
